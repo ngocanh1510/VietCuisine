@@ -11,7 +11,7 @@ dotenv.config();
 // Đăng ký tài khoản mới
 export const register = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const { name, email, password, gender, phone } = req.body;
        
         // Kiểm tra mật khẩu và xác nhận mật khẩu
         // if (password !== cfpassword) {
@@ -19,6 +19,12 @@ export const register = async (req, res) => {
         // }
 
         // Kiểm tra email hợp lệ
+
+        const phoneRegex = /^\d{10,11}$/;
+        if (!phoneRegex.test(phone)) {
+            return res.status(400).json({ message: 'Số điện thoại không hợp lệ' });
+        }
+
         const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         if (!emailRegex.test(email)) {
             return res.status(400).json({ message: 'Email không hợp lệ' });
@@ -40,7 +46,7 @@ export const register = async (req, res) => {
         }
         
         // Tạo User
-        const user = new User({ name, email });
+        const user = new User({ name, email, gender, phone });
         await user.save();
 
 
