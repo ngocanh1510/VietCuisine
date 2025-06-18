@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const LikeSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'users',
     required: true
   },
   targetId: {
@@ -14,7 +14,7 @@ const LikeSchema = new mongoose.Schema({
   onModel: {
     type: String,
     required: true,
-    enum: ['Post', 'Comment','Reel'] // có thể mở rộng nếu cần
+    enum: ['Post','Reel'] // có thể mở rộng nếu cần
   }
 }, {
   timestamps: { createdAt: 'createAt', updatedAt: false }

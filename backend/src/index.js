@@ -6,6 +6,7 @@ import AccountRouter from "./routes/auth-router.js";
 import CategoryRouter from "./routes/category-router.js";
 import RecipeRouter from "./routes/recipe-router.js";
 import PostRouter from "./routes/post-router.js"
+import CommentRouter from "./routes/comment-router.js"
 dotenv.config();
 
 const app = express();
@@ -31,3 +32,4 @@ app.use("/auth", AccountRouter);
 app.use("/recipe", RecipeRouter);
 app.use("/category",CategoryRouter)
 app.use("/posts",PostRouter)
+app.use("/comment",CommentRouter)
