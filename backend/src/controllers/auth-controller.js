@@ -72,14 +72,14 @@ export const register = async (req, res) => {
 // Đăng nhập
 export const login = async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { email, password } = req.body;
 
-        if (!username || !password) {
+        if (!email || !password) {
             return res.status(400).json({ message: 'Vui lòng nhập tên người dùng và mật khẩu' });
         }
 
         // Tìm tài khoản
-        const account = await Account.findOne({ username });
+        const account = await Account.findOne({ email });
         if (!account) {
             return res.status(404).json({ message: 'Tài khoản không tồn tại.' });
         }
@@ -122,7 +122,8 @@ export const getProfile = async (req, res) => {
         const userProfile = {
             name: account.user.name,
             email: account.user.email,
-            // gender: account.user.gender,
+            gender: account.user.gender,
+            phone: account.user.phone,
             avatar: account.user.avatar,
         };
 
@@ -150,12 +151,12 @@ export const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
 
-        // Tìm tài khoản theo email
-        const account = await Account.findOne({ username: email });
+        // Tìm tài khoản theo username
+        const account = await Account.findOne({ email });
         if (!account) {
-            return res.status(404).json({ message: 'Email không tồn tại.' });
+            return res.status(404).json({ message: 'Tên đăng nhập không tồn tại.' });
         }
-
+        
         // Tạo OTP ngẫu nhiên
         const otp = generateOTP();
 
@@ -164,27 +165,28 @@ export const forgotPassword = async (req, res) => {
         account.passwordResetExpires = Date.now() + 10 * 60 * 1000; // OTP hết hạn sau 10 phút
         await account.save();
         
-         // Gửi OTP qua email
+        // Gửi OTP qua email
         const mailSubject = 'Đặt lại mật khẩu CeeCine';
         const mailText = `Mã OTP của bạn là: ${otp}. Mã OTP sẽ hết hạn sau 10 phút.`;
 
         try {
-            await sendEmail(email, mailSubject, mailText);
+            await sendEmail(account.email, mailSubject, mailText);
             res.status(200).json({ message: 'Mã OTP đã được gửi tới email của bạn.' });
-        } catch (err) {
+        } catch (error) {
             res.status(500).json({ message: 'Không thể gửi email', error });
         }
     } catch (error) {
-        res.status(500).json({ error: 'Đã có lỗi xảy ra.' });
-      }
+        res.status(500).json({ message: 'Đã có lỗi xảy ra.', error });
+    }
 };
+
 
 export const verifyOTP = async (req, res) => {
     try {
         const { email, otp } = req.body;
 
         // Kiểm tra người dùng
-        const account = await Account.findOne({ username: email });
+        const account = await Account.findOne({ email: email });
         if (!account) {
             return res.status(404).json({ message: 'Email không tồn tại.' });
         }
@@ -218,7 +220,7 @@ export const resetPassword = async (req, res) => {
 
     try {
         // Kiểm tra người dùng
-        const account = await Account.findOne({ username: email });
+        const account = await Account.findOne({ email: email });
         if (!account || !account.isOtpVerified) {
             return res.status(400).json({ message: 'OTP chưa được xác minh.' });
         }
