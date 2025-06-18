@@ -10,7 +10,7 @@ const UserSchema = new mongoose.Schema({
         default: 'https://i.pinimg.com/736x/c6/e5/65/c6e56503cfdd87da299f72dc416023d4.jpg'
     },
     // gender:{ type: String, required: true},
-    savedRecipes: [{ type: mongoose.Types.ObjectId, ref: "recipesses" }],
+    savedRecipes: [{ type: mongoose.Types.ObjectId, ref: "recipe" }],
     createdAt: { 
         type: Date, 
         default: Date.now 

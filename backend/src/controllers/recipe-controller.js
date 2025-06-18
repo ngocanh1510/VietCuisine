@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 import CategoryModel from "../models/Categories.js";
 import sendNotification from "../utils/sendNotification.js";
 import NotificationModel from "../models/Notification.js";
-
+import RecipeIngredient from "../models/RecipeIngredient.js";
 
 export const getAllRecipes = async (req, res, next) => {
   let recipes;
@@ -634,3 +634,26 @@ export const markNotificationAsRead = async (req, res) => {
     console.error(err);
     res.status(500).json({ status: false, message: "Failed to mark notification as read" });
   }}
+
+  export const getIngredientByRecipeId = async (req, res) => {
+     try {
+    const { recipeId } = req.params;
+
+     const recipeIngredients = await RecipeIngredient.find({
+      recipeId: new mongoose.Types.ObjectId(recipeId)}).populate('ingredientId');
+
+    const result = recipeIngredients.map(item => ({
+      name: item.ingredientId?.name,
+      unit: item.ingredientId?.unit,
+      unitPrice: item.ingredientId?.unitPrice,
+      imageUrl: item.ingredientId?.imageUrl,
+      quantity: item.quantity
+    }));
+
+    res.json(result);
+    console.log(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Lỗi server khi lấy nguyên liệu' });
+  }
+  }
