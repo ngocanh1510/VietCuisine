@@ -21,6 +21,11 @@ const PostSchema = new mongoose.Schema({
   likesCount: {
     type: Number,
     default: 0
+  },
+  recipeId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'recipe', 
+    default: null
   }
 }, {
   timestamps: { createdAt: 'createdAt', updatedAt: 'updateAt' }

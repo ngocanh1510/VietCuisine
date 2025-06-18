@@ -3,9 +3,9 @@ import Post from '../models/Post.js';
 // Tạo bài viết
 export const createPost = async (req, res) => {
   try {
-    const { caption, image } = req.body;
+    const { caption, image, recipeId  } = req.body;
     const userId = req.user.id;
-    const post = new Post({ userId, caption, image });
+    const post = new Post({ userId, caption, image, recipeId  });
     await post.save();
     res.status(201).json(post);
   } catch (error) {
@@ -45,9 +45,10 @@ export const updatePost = async (req, res) => {
       return res.status(403).json({ message: 'Bạn không có quyền cập nhật bài viết này.' });
     }
 
-    const { caption, image } = req.body;
+    const { caption, image,recipeId } = req.body;
     post.caption = caption || post.caption;
     post.image = image || post.image;
+    post.recipeId = recipeId || post.recipeId;
     const updatedPost = await post.save();
 
     res.status(200).json(updatedPost);
