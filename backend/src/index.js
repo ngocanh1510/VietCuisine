@@ -15,6 +15,7 @@ import IngredientRouter from "./routes/ingredient-router.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import ReelRouter from "./routes/reel-router.js";
+import AdminRouter from "./routes/admin-router.js";
 
 dotenv.config();
 
@@ -55,7 +56,7 @@ app.use("/reel",ReelRouter);
 app.use("/posts",PostRouter)
 app.use("/comment",CommentRouter)
 app.use("/messages", MessageRouter);
-
+app.use("/admin", AdminRouter);
 // Socket.IO logic
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
