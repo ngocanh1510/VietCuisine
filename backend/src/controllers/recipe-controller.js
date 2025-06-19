@@ -7,6 +7,7 @@ import CategoryModel from "../models/Categories.js";
 import sendNotification from "../utils/sendNotification.js";
 import NotificationModel from "../models/Notification.js";
 import RecipeIngredient from "../models/RecipeIngredient.js";
+import Ingredient from "../models/Ingredient.js";
 
 export const getAllRecipes = async (req, res, next) => {
   let recipes;
@@ -74,8 +75,6 @@ export const getRecipesInHomepage = async (req, res, next) => {
 };
 
 export const addRecipe = async (req, res) => {
-
-
   const {
     title,
     time,
@@ -85,48 +84,37 @@ export const addRecipe = async (req, res) => {
     fat,
     description,
     category,
-    ingredients,
+    ingredients, // [{ name: "Tôm", quantity: "100g" }]
     steps,
-    image
-  } = req.body
-  // let image = req.file ? req.file.buffer.toString('base64') : null;
-  const accountId = req.user.id; // Lấy accountId từ middleware xác thực (JWT)
+  } = req.body;
+  const imageUrl = req.file?.path;
+  const userId = req.user?.id;
 
-  if (!mongoose.Types.ObjectId.isValid(accountId)) {
+  // Validate
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).json({ status: false, message: "Invalid Account ID" });
   }
-    // Tìm user thông qua accountId
-    const account = await AccountModel.findById(accountId).populate("user");
-    if (!account || !account.user) {
-      return res.status(404).json({ status: false, message: "User not found" });
-    }
 
-    const userId = account.user._id;
-  const categoryDoc = await CategoryModel.findOne({ name: category });
-        if (!categoryDoc) {
-            return res.status(400).json({ error: "Category not found" });
-        }
   if (
     !title || title.trim() === "" ||
-    !time || 
-    !carbs ||
-    !protein ||
-    !calories ||
-    !fat ||
+    !time || !carbs || !protein || !calories || !fat ||
     !description || description.trim() === "" ||
-    !Array.isArray(ingredients) || ingredients.length === 0
-    ||
+    !Array.isArray(ingredients) || ingredients.length === 0 ||
     !Array.isArray(steps) || steps.length === 0
-
   ) {
-    return res.status(422).json({ message: "invalid input" });
+    return res.status(422).json({ message: "Invalid input" });
   }
 
-
-  let recipe;
   try {
-    recipe = new RecipeModel({
-      userOwner:userId,
+    // Tìm danh mục
+    const categoryDoc = await CategoryModel.findOne({ name: category.trim() });
+    if (!categoryDoc) {
+      return res.status(400).json({ error: "Category not found" });
+    }
+
+    // Tạo công thức trước
+    const newRecipe = new RecipeModel({
+      userOwner: userId,
       title,
       time,
       carbs,
@@ -135,19 +123,32 @@ export const addRecipe = async (req, res) => {
       fat,
       description,
       categoriesId: categoryDoc._id,
-      ingredients,
       steps,
-      image
-      // :`data:${req.file.mimetype};base64,${imageBase64}`
+      image:imageUrl
     });
+    await newRecipe.save();
 
-    await recipe.save();
+    // Tạo từng dòng RecipeIngredient
+    for (const item of ingredients) {
+      console.log("item",ingredients,"+",item);
+      const ingredientDoc = await Ingredient.findOne({ name: item.name.trim() });
+      console.log("ingre", ingredientDoc)
+      if (!ingredientDoc) 
+        return res.status(500).json({ message: "ingedient not found", error: err.message });; // bỏ qua nếu không tìm thấy nguyên liệu
+
+  
+      await RecipeIngredient.create({
+        recipeId: newRecipe._id,
+        ingredientId: ingredientDoc._id,
+        quantity: item.quantity
+      });
+    }
+
+    return res.status(201).json({ message: "Recipe added successfully", recipe: newRecipe });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Failed to add recipe", error: err.message });
   }
-
-  return res.status(201).json({ message: "Recipe added successfully", recipe })
 };
 
 // Lấy danh dách công thức của tôi

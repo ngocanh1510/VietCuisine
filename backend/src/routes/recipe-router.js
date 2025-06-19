@@ -1,5 +1,6 @@
 import express from "express";
 import authMiddleware from "../middlewares/auth-middlewares.js";
+import upload  from "../middlewares/uploadMiddelware.js";
 import { getAllRecipes, getRecipesInHomepage,addRecipe,editRecipe,deleteRecipe, toggleLikeRecipe,getSavedRecipes, toggleSaveRecipe, commentOnRecipe, deleteCommentFromRecipe, getNotifications, markNotificationAsRead, getRecipesByCategory,getCreateRecipes, getIngredientByRecipeId} from '../controllers/recipe-controller.js'
 
 
@@ -8,7 +9,7 @@ const RecipeRouter = express.Router();
     RecipeRouter.get("/category/:categoryId",getRecipesByCategory);
     RecipeRouter.get("/all",getAllRecipes);
     RecipeRouter.get("/savedRecipes",authMiddleware,getSavedRecipes)
-    RecipeRouter.post("/add",authMiddleware,addRecipe);
+    RecipeRouter.post("/add",authMiddleware,upload.single('image'),addRecipe);
     RecipeRouter.get("/my",authMiddleware,getCreateRecipes)
     RecipeRouter.put("/:id",editRecipe);
     RecipeRouter.delete("/:id",deleteRecipe);
