@@ -15,7 +15,8 @@ const authMiddleware = async (req, res, next) => {
 
       req.user = {
         id: account.user._id,     // userId
-        accountId: account._id    // optional
+        accountId: account._id,   // optional
+        role: account.role    
       };
       
       // console.log('req.user:', req.user); 

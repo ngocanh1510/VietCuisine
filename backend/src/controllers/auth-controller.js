@@ -46,7 +46,7 @@ export const register = async (req, res) => {
         }
         
         // Tạo User
-        const user = new User({ name, email, gender, phone });
+        const user = new User({ name, email, gender, phone, role: 'user' });
         await user.save();
 
 
@@ -92,7 +92,7 @@ export const login = async (req, res) => {
         }
 
         // Tạo JWT
-        const token = jwt.sign({ id: account._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+        const token = jwt.sign({ id: account._id, role: account.role  }, process.env.JWT_SECRET, { expiresIn: '1d' });
         console.log('req.user:', req.user); 
 
         res.json({ 

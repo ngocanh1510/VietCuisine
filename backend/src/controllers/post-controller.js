@@ -63,11 +63,11 @@ export const deletePost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).json({ message: 'Bài viết không tồn tại.' });
-
-    // Kiểm tra người dùng có phải là chủ bài viết không
-    if (post.userId.toString() !== req.user.id.toString()) {
-      console.log(post.userId.toString());
-      console.log(req.user.id.toString());
+    
+    // Kiểm tra người dùng có phải là chủ bài viết hoặc là admin
+    const isOwner = post.userId.toString() === req.user.id.toString();
+    const isAdmin = req.user.role === 'admin';
+    if (!isOwner && !isAdmin) {
       return res.status(403).json({ message: 'Bạn không có quyền xoá bài viết này.' });
     }
 
