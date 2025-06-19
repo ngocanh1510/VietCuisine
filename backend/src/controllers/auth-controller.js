@@ -56,7 +56,7 @@ export const register = async (req, res) => {
         // Tạo Account
         const account = new Account({
             user: user._id,
-            username: email,
+            email: email,
             password: hashedPassword,
         });
         await account.save();
