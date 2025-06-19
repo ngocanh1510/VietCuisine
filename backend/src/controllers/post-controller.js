@@ -79,3 +79,16 @@ export const deletePost = async (req, res) => {
   }
 
 };
+
+// Lấy tất cả bài viết của bản thân
+export const getMyPosts = async (req, res) => {
+  try {
+    const userId = req.user.id; 
+
+    const posts = await Post.find({ userId }).sort({ createdAt: -1 });
+
+    res.status(200).json(posts);
+  } catch (error) {
+    res.status(500).json({ message: 'Không thể lấy bài viết của bạn.', error: error.message });
+  }
+};

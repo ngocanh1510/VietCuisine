@@ -151,20 +151,17 @@ export const addRecipe = async (req, res) => {
 
 // Lấy danh dách công thức của tôi
 export const getCreateRecipes = async (req, res) => {
-  const accountId = req.user.id; // Lấy accountId từ middleware xác thực (JWT)
-
-  if (!mongoose.Types.ObjectId.isValid(accountId)) {
+  const userId = req.user.id; 
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).json({ status: false, message: "Invalid Account ID" });
   }
 
   try {
-    // Tìm user thông qua accountId
-    const account = await AccountModel.findById(accountId).populate("user");
-    if (!account || !account.user) {
+    const user = await UserModel.findById(userId);
+    if (!user) {
       return res.status(404).json({ status: false, message: "User not found" });
     }
 
-    const userId = account.user._id; // Lấy userId thực
     const userRecipes = await RecipeModel.find({ userOwner: userId }); // Tìm các công thức của người dùng
     res.status(200).json({ success: true, recipes: userRecipes }); // Đồng bộ tên trả về
   } catch (error) {

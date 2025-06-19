@@ -12,7 +12,11 @@ const authMiddleware = async (req, res, next) => {
       // Thực hiện xác thực token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const account = await Account.findById(decoded.id).populate('user');
-
+      
+      if (account.status === 'banned') {
+        return res.status(403).json({ message: "Tài khoản đã bị khoá." });
+      }
+      
       req.user = {
         id: account.user._id,     // userId
         accountId: account._id,   // optional
