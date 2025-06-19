@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const ReelSchema = new mongoose.Schema({
-    userOwner: {type: mongoose.Types.ObjectId, ref: User},
+    userOwner: {type: mongoose.Types.ObjectId, ref:"users"},
     caption: {type:String},
     video: {type:String, required:true}
 },

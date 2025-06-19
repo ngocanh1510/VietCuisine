@@ -1,4 +1,4 @@
-import ReelModel from "../models/Reel";
+import ReelModel from "../models/Reel.js";
 
 export const getAllReel = async(req,res,next) =>{
     let reels;

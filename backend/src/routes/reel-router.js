@@ -1,4 +1,4 @@
-import { getAllReel } from "../controllers/reel-controller";
+import { getAllReel } from "../controllers/reel-controller.js";
 import express from "express";
 
 const ReelRouter = express.Router();
