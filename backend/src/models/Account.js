@@ -13,6 +13,13 @@ const AccountSchema = new mongoose.Schema({
         ref: "users", 
         required: true 
     },
+
+    role: {
+    type: String,
+    enum: ['user', 'admin'], 
+    default: 'user'
+    },
+
     passwordResetToken: { type: String, default: null },  // Lưu trữ OTP
     passwordResetExpires: { type: Date, default: null },
     isOtpVerified: { type: Boolean, default: false }

@@ -35,7 +35,10 @@ export const deleteComment = async (req, res) => {
     const comment = await Comment.findById(req.params.id);
     if (!comment) return res.status(404).json({ message: 'Bình luận không tồn tại.' });
 
-    if (comment.userId.toString() !== req.user.id.toString()) {
+    const isOwner = comment.userId.toString() === req.user.id.toString();
+    const isAdmin = req.user.role === 'admin';
+    
+    if (!isOwner && !isAdmin) {
       return res.status(403).json({ message: 'Bạn không có quyền xoá bình luận này.' });
     }
 
