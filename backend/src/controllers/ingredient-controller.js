@@ -17,5 +17,7 @@ export const getAllIngredient = async (req, res, next) => {
 
 export const addIngredient = async(req, res, next)=>{
   const {name, unit, unitPrice} = req.body;
-  
+  const imageUrl = req.file?.path;
+
+
 }

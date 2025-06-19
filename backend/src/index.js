@@ -14,10 +14,14 @@ import MessageRouter from "./routes/message-router.js";
 import IngredientRouter from "./routes/ingredient-router.js";
 import path from "path";
 import { fileURLToPath } from "url";
+import ReelRouter from "./routes/reel-router.js";
 
 dotenv.config();
 
 const app = express();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
@@ -36,3 +40,7 @@ mongoose.connect(
 app.use("/auth", AccountRouter);
 app.use("/recipe", RecipeRouter);
 app.use("/category",CategoryRouter)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use("/ingredient",IngredientRouter)
+app.use("/reel",ReelRouter);
+
