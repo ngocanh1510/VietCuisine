@@ -90,6 +90,7 @@ export const addRecipe = async (req, res) => {
   const imageUrl = req.file?.path;
   const userId = req.user?.id;
 
+  console.log(req.body);
   // Validate
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).json({ status: false, message: "Invalid Account ID" });
@@ -98,9 +99,9 @@ export const addRecipe = async (req, res) => {
   if (
     !title || title.trim() === "" ||
     !time || !carbs || !protein || !calories || !fat ||
-    !description || description.trim() === "" ||
-    !Array.isArray(ingredients) || ingredients.length === 0 ||
-    !Array.isArray(steps) || steps.length === 0
+    !description || description.trim() === "" 
+    || !Array.isArray(ingredients) || ingredients.length === 0 
+    // || !Array.isArray(steps) || steps.length === 0
   ) {
     return res.status(422).json({ message: "Invalid input" });
   }
@@ -176,12 +177,10 @@ export const getCreateRecipes = async (req, res) => {
 export const editRecipe = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, time, carbs, protein, calories, fat, description, category, ingredients, steps, image } = req.body;
-
-    const categoryDoc = await CategoryModel.findOne({ name: category });
-      if (!categoryDoc) {
-          return res.status(400).json({ error: "Category not found" });
-      }
+    const { title, time, carbs, protein, calories, fat, description, category, ingredients, steps } = req.body;
+    const imageUrl = req.file?.path;
+    const userId = req.user?.id;
+      
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         status: false,
@@ -196,6 +195,12 @@ export const editRecipe = async (req, res) => {
         message: 'Recipe not found'
       });
     }
+    if (!existingRecipe.userOwner.equals(userId)) {
+    return res.status(400).json({
+      status: false,
+      message: 'Unauthorized'
+    });
+}
 
     if (title && title !== existingRecipe.title) {
       const existingTitle = await RecipeModel.findOne({ title });
@@ -215,10 +220,16 @@ export const editRecipe = async (req, res) => {
     if (calories) updateFields.calories = calories;
     if (fat) updateFields.fat = fat;
     if (description) updateFields.description = description;
-    if (categoryDoc._id) updateFields.categoriesId = categoryDoc._id;
+    if(category){
+      const categoryDoc = await CategoryModel.findOne({ name: category });
+        if (!categoryDoc) {
+            return res.status(400).json({ error: "Category not found" });
+      }
+      updateFields.categoriesId = categoryDoc._id;
+    }
     if (ingredients) updateFields.ingredients = ingredients;
     if (steps) updateFields.steps = steps;
-    if (image) updateFields.image = image;
+    if (imageUrl) updateFields.image = imageUrl;
 
     const updatedRecipe = await RecipeModel.findByIdAndUpdate(id, updateFields, { new: true });
 
@@ -241,7 +252,7 @@ export const editRecipe = async (req, res) => {
 export const deleteRecipe = async (req, res) => {
   try {
     const { id } = req.params; // Lấy ID từ tham số trong URL
-
+    const userId = req.user?.id;
     // Kiểm tra xem ID có hợp lệ không
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -258,6 +269,13 @@ export const deleteRecipe = async (req, res) => {
         message: 'Recipe not found'
       });
     }
+
+    if (!existingRecipe.userOwner.equals(userId)) {
+    return res.status(400).json({
+      status: false,
+      message: 'Unauthorized'
+    });
+   }
 
     // Xóa món ăn
     await RecipeModel.findByIdAndDelete(id);
@@ -650,9 +668,7 @@ export const markNotificationAsRead = async (req, res) => {
     }));
 
     res.json(result);
-    console.log(result);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: 'Lỗi server khi lấy nguyên liệu' });
   }
   }

@@ -11,8 +11,8 @@ const RecipeRouter = express.Router();
     RecipeRouter.get("/savedRecipes",authMiddleware,getSavedRecipes)
     RecipeRouter.post("/add",authMiddleware,upload.single('image'),addRecipe);
     RecipeRouter.get("/my",authMiddleware,getCreateRecipes)
-    RecipeRouter.put("/:id",editRecipe);
-    RecipeRouter.delete("/:id",deleteRecipe);
+    RecipeRouter.put("/:id",authMiddleware,editRecipe);
+    RecipeRouter.delete("/:id",authMiddleware,deleteRecipe);
     RecipeRouter.post('/:id/toggle-like', authMiddleware, toggleLikeRecipe);
     RecipeRouter.post('/:id/toggle-save', authMiddleware, toggleSaveRecipe);
     RecipeRouter.post('/:id/comments', authMiddleware, commentOnRecipe);
