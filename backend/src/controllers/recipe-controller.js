@@ -7,7 +7,7 @@ import CategoryModel from "../models/Categories.js";
 import sendNotification from "../utils/sendNotification.js";
 import NotificationModel from "../models/Notification.js";
 import RecipeIngredient from "../models/RecipeIngredient.js";
-import Ingredient from "../models/Ingredient.js";
+import IngredientModel from "../models/Ingredient.js";
 
 export const getAllRecipes = async (req, res, next) => {
   let recipes;
@@ -128,11 +128,9 @@ export const addRecipe = async (req, res) => {
     });
     await newRecipe.save();
 
-    // Tạo từng dòng RecipeIngredient
+    // Tạo từng dòng RecipeIngredients
     for (const item of ingredients) {
-      console.log("item",ingredients,"+",item);
-      const ingredientDoc = await Ingredient.findOne({ name: item.name.trim() });
-      console.log("ingre", ingredientDoc)
+      const ingredientDoc = await IngredientModel.findOne({ name: item.name.trim() });
       if (!ingredientDoc) 
         return res.status(500).json({ message: "ingedient not found", error: err.message });; // bỏ qua nếu không tìm thấy nguyên liệu
 

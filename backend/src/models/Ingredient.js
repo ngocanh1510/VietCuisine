@@ -8,4 +8,5 @@ const IngredientSchema = new mongoose.Schema({
 
 });
 
-export default mongoose.model('ingredient', IngredientSchema);
+const IngredientModel = mongoose.model('ingredient', IngredientSchema);
+export default IngredientModel
