@@ -197,7 +197,7 @@ export const editRecipe = async (req, res) => {
       status: false,
       message: 'Unauthorized'
     });
-}
+    }
 
     if (title && title !== existingRecipe.title) {
       const existingTitle = await RecipeModel.findOne({ title });
@@ -669,3 +669,28 @@ export const markNotificationAsRead = async (req, res) => {
     res.status(500).json({ message: 'Lỗi server khi lấy nguyên liệu' });
   }
   }
+
+  //Search công thức
+  export const searchRecipe = async (req, res) => {
+    const { keyword } = req.query;
+  
+    try {
+      const results = await RecipeModel.aggregate([
+        {
+          $search: {
+            index: "unsignedRecipe", // hoặc tên bạn đặt
+            text: {
+              query: keyword,
+              path: "title"
+            }
+          }
+        }
+      ]);
+  
+      res.status(200).json({ status: true, recipes: results });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ status: false, message: "Search failed", error: err.message });
+    }
+  };
+  
