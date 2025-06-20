@@ -3,8 +3,14 @@ import Post from '../models/Post.js';
 // Tạo bài viết
 export const createPost = async (req, res) => {
   try {
-    const { caption, image, recipeId  } = req.body;
+    const { caption, recipeId  } = req.body;
     const userId = req.user.id;
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'Vui lòng tải lên hình ảnh.' });
+    }
+    const image = req.file?.path;
+
     const post = new Post({ userId, caption, image, recipeId  });
     await post.save();
     res.status(201).json(post);
@@ -45,7 +51,13 @@ export const updatePost = async (req, res) => {
       return res.status(403).json({ message: 'Bạn không có quyền cập nhật bài viết này.' });
     }
 
-    const { caption, image,recipeId } = req.body;
+    const { caption,recipeId } = req.body;
+    
+    if (!req.file) {
+      return res.status(400).json({ message: 'Vui lòng tải lên hình ảnh.' });
+    }
+    
+    const image = req.file?.path;
     post.caption = caption || post.caption;
     post.image = image || post.image;
     post.recipeId = recipeId || post.recipeId;
