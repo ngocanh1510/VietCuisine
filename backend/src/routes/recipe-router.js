@@ -1,7 +1,7 @@
 import express from "express";
 import authMiddleware from "../middlewares/auth-middlewares.js";
 import upload  from "../middlewares/uploadMiddelware.js";
-import { getAllRecipes, getRecipesInHomepage,addRecipe,editRecipe,deleteRecipe, toggleLikeRecipe,getSavedRecipes, toggleSaveRecipe, commentOnRecipe, deleteCommentFromRecipe, getNotifications, markNotificationAsRead, getRecipesByCategory,getCreateRecipes, getIngredientByRecipeId} from '../controllers/recipe-controller.js'
+import { getAllRecipes, getRecipesInHomepage,addRecipe,editRecipe,deleteRecipe, toggleLikeRecipe,getSavedRecipes, toggleSaveRecipe, commentOnRecipe, deleteCommentFromRecipe, getNotifications, markNotificationAsRead, getRecipesByCategory,getCreateRecipes, getIngredientByRecipeId, searchRecipe} from '../controllers/recipe-controller.js'
 
 
 const RecipeRouter = express.Router();
@@ -20,6 +20,7 @@ const RecipeRouter = express.Router();
     RecipeRouter.get('/notifications/:userId', authMiddleware, getNotifications);
     RecipeRouter.patch('/notifications/:id', authMiddleware, markNotificationAsRead);
     RecipeRouter.get('/:recipeId/ingredients', getIngredientByRecipeId);
+    RecipeRouter.get("/search",searchRecipe);
 
 
 export default RecipeRouter;

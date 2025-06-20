@@ -1,7 +1,9 @@
 import mongoose from "mongoose";
 import AccountModel from "../models/Account.js";
 import IngredientModel from "../models/Ingredient.js";
-
+import fs from 'fs';
+import csv from 'csv-parser';
+import xlsx from 'xlsx';
 
 //Lấy danh sách nguyên liệu
 export const getAllIngredient = async (req, res, next) => {
@@ -22,15 +24,11 @@ export const getAllIngredient = async (req, res, next) => {
 //Thêm nguyên liệu
 export const addIngredient = async(req, res, next)=>{
   try{
-    const {name, unit, unitPrice} = req.body;
+    const {name, unit, unitPrice, category, stock} = req.body;
     const imageUrl = req.file?.path;
 
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-        return res.status(400).json({ status: false, message: "Invalid Account ID" });
-      }
-
       // Kiểm tra dữ liệu đầu vào
-      if (!name || !unit || !unitPrice) {
+      if (!name || !unit || !unitPrice ||!category ||!stock) {
         return res.status(422).json({ message: "Invalid input" });
       }
 
@@ -46,7 +44,9 @@ export const addIngredient = async(req, res, next)=>{
       name:name,
       unitPrice:unitPrice,
       unit:unit,
-      imageUrl:imageUrl
+      imageUrl:imageUrl,
+      category:category,
+      stock:stock
     })
 
     await ingredient.save();
@@ -61,7 +61,7 @@ export const addIngredient = async(req, res, next)=>{
 export const updateIngredient = async(req, res)=>{
   try{
     const {id} = req.params;
-    const {name, unit, unitPrice} = req.body;
+    const {name, unit, unitPrice, category, stock} = req.body;
     const imageUrl = req.file?.path;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -94,6 +94,8 @@ export const updateIngredient = async(req, res)=>{
     if (unitPrice) updateFields.time = unitPrice;
     if (unit) updateFields.carbs = unit;
     if (imageUrl) updateFields.image = imageUrl;
+    if(category) updateFields.category = category;
+    if(stock) updateFields.category = stock;
 
     const updatedIngredient = await IngredientModel.findByIdAndUpdate(id, updateFields, { new: true });
 
@@ -112,14 +114,14 @@ export const updateIngredient = async(req, res)=>{
 //Xóa nguyên liệu
 export const deleteIngredient = async (req, res) => {
   try {
-    const { id } = req.params; // Lấy ID từ tham số trong URL
+    const { id } = req.params; 
     const userId = req.user?.id;
     
     const account = await AccountModel.findOne({user: new mongoose.Types.ObjectId(userId)});
     if (!account || account.role !== "admin") {
       return res.status(403).json({ status: false, message: "User cannot edit ingredient" });
     }
-    // Kiểm tra xem ID có hợp lệ không
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         status: false,
@@ -127,7 +129,6 @@ export const deleteIngredient = async (req, res) => {
       });
     }
 
-    // Tìm món ăn trong cơ sở dữ liệu bằng ID
     const existingIngredient = await IngredientModel.findById(id);
     if (!existingIngredient) {
       return res.status(404).json({
@@ -174,3 +175,75 @@ export const searchIngredient = async (req, res) => {
     res.status(500).json({ status: false, message: "Search failed", error: err.message });
   }
 };
+
+export const updateStockUnified = async (req, res) => {
+  try {
+    let updates = [];
+
+    // Nếu có file
+    if (req.file) {
+      const ext = req.file.originalname.split('.').pop().toLowerCase();
+
+      if (ext === 'csv') {
+        const rows = [];
+        fs.createReadStream(req.file.path)
+          .pipe(csv())
+          .on('data', (row) => rows.push(row))
+          .on('end', async () => {
+            fs.unlinkSync(req.file.path);
+            await handleStockImport(rows, res); // Gọi xử lý
+          });
+        return;
+      } else if (ext === 'xlsx') {
+        const workbook = xlsx.readFile(req.file.path);
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        updates = xlsx.utils.sheet_to_json(sheet);
+        fs.unlinkSync(req.file.path);
+      }
+    } else {
+      updates = req.body;
+    }
+
+    if (!Array.isArray(updates) || updates.length === 0) {
+      return res.status(400).json({ status: false, message: "Dữ liệu không hợp lệ" });
+    }
+
+    await handleStockImport(updates, res);
+  } catch (err) {
+    console.error('Lỗi xử lý:', err);
+    res.status(500).json({ message: 'Lỗi server', error: err.message });
+  }
+};
+
+async function handleStockImport(data, res) {
+  try {
+    const updatedIngredients = [];
+    for (const item of data) {
+      const name = item.name?.trim();
+      const quantity = item.quantity;
+      if (!name || isNaN(quantity)) continue;
+
+      const ingredient = await IngredientModel.findOne({ name });
+      if (!ingredient) continue;
+
+      const newStock = (ingredient.stock || 0) + quantity;
+      console.log("1", newStock)
+      await IngredientModel.updateOne(
+        { _id: ingredient._id },
+        { $set: { stock: newStock } }
+      );
+
+      const updated = await IngredientModel.findById(ingredient._id);
+      updatedIngredients.push(updated);
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: "Nhập kho thành công",
+      updatedIngredients,
+    });
+  } catch (err) {
+    console.error("Lỗi nhập kho:", err);
+    return res.status(500).json({ message: 'Lỗi khi nhập kho', error: err.message });
+  }
+}
