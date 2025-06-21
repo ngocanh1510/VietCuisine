@@ -18,6 +18,7 @@ import ReelRouter from "./routes/reel-router.js";
 import AdminRouter from "./routes/admin-router.js";
 import OrderRouter from "./routes/ingredient-order-router.js";
 import LikeRouter from "./routes/like-router.js";
+import webhookRouter from "./routes/webhook-router.js";
 dotenv.config();
 
 const app = express();
@@ -34,7 +35,7 @@ const io = new Server(server, {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
+app.use("/webhook",webhookRouter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cors());

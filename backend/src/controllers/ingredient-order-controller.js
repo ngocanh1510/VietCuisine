@@ -1,5 +1,6 @@
 import Ingredient from '../models/Ingredient.js'; 
 import IngredientOrder from '../models/IngredientOrder.js';
+import Stripe from "stripe";
 
 export const orderIngredients = async (req, res) => {
   try {
@@ -44,6 +45,7 @@ export const orderIngredients = async (req, res) => {
         quantity: item.quantity,
         unit: ingredient.unit,
         pricePerUnit: ingredient.unitPrice,
+        image: ingredient.imageUrl,
         subtotal: ingredient.unitPrice * item.quantity
       });
     }
@@ -97,4 +99,65 @@ export const getAllOrders = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Lỗi khi lấy danh sách đơn hàng.', error: error.message });
   }
+};
+
+const stripe = new Stripe ( process.env.STRIPE_SECRET_KEY);
+// Thanh toán
+export const payment = async (req, res) => {
+    try {
+        const { items, orderId, couponCode } = req.body;
+
+        //Danh sách sản phẩm
+        const lineItems = items.map((item) => ({
+            price_data: {
+                currency: 'VND',
+                product_data: {
+                    name: item.name,
+                    images: [item.image],
+                    description:item.unit
+                },
+                unit_amount: item.pricePerUnit,
+            },
+            quantity: item.quantity,
+        }));
+
+        let discounts = [];
+
+        // Nếu có couponCode từ frontend → kiểm tra trên Stripe
+        if (couponCode) {
+            const promotionCodes = await stripe.promotionCodes.list({
+                code: couponCode,
+                active: true,
+                limit: 1,
+            });
+
+            if (promotionCodes.data.length > 0) {
+                discounts.push({ promotion_code: promotionCodes.data[0].id });
+            } else {
+                return res.status(400).json({ error: 'Mã giảm giá không hợp lệ' });
+            }
+        }
+
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            line_items: lineItems,
+            mode: 'payment',
+            locale: 'vi',
+            discounts: discounts, // Chỉ thêm nếu có mã giảm giá hợp lệ
+            success_url: 'https://ceecine.vercel.app/success',
+            cancel_url: 'https://ceecine.vercel.app/cancel',
+            metadata: {
+                orderId: orderId
+            },
+        });
+
+        res.json({
+          sessionId: session.id,
+          url: session.url
+        });
+
+    } catch (error) {
+        res.status(500).send('Lỗi khi tạo session thanh toán');
+        console.error("Lỗi khi tạo session thanh toán:", error);
+    }
 };
