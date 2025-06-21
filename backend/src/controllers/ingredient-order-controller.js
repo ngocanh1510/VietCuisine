@@ -177,3 +177,15 @@ export const payment = async (req, res) => {
     res.status(500).send('Lỗi khi tạo session thanh toán');
   }
 };
+
+export const getOrderById = async(req, res, next) =>{
+  try{
+    const order = await IngredientOrder.findById(req.params.id);
+      if (!order) return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+      res.json(order);
+  }
+  catch(error){
+    res.status(500).json({error:error});
+  }
+
+}

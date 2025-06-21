@@ -87,6 +87,14 @@ io.on("connection", (socket) => {
   });
   });
 
+   socket.on("joinOrderRoom", (orderId) => {
+    socket.join(orderId);
+  });
+
+  socket.on("updateLocation", ({ orderId, lat, lng }) => {
+    io.to(orderId).emit("locationUpdate", { lat, lng });
+  });
+
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
   });

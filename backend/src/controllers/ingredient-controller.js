@@ -203,7 +203,6 @@ export const updateStockUnified = async (req, res) => {
     } else {
       updates = req.body;
     }
-
     if (!Array.isArray(updates) || updates.length === 0) {
       return res.status(400).json({ status: false, message: "Dữ liệu không hợp lệ" });
     }
@@ -225,9 +224,7 @@ async function handleStockImport(data, res) {
 
       const ingredient = await IngredientModel.findOne({ name });
       if (!ingredient) continue;
-
       const newStock = (ingredient.stock || 0) + quantity;
-      console.log("1", newStock)
       await IngredientModel.updateOne(
         { _id: ingredient._id },
         { $set: { stock: newStock } }
