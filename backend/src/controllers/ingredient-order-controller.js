@@ -144,8 +144,8 @@ export const payment = async (req, res) => {
             mode: 'payment',
             locale: 'vi',
             discounts: discounts, // Chỉ thêm nếu có mã giảm giá hợp lệ
-            success_url: 'https://ceecine.vercel.app/success',
-            cancel_url: 'https://ceecine.vercel.app/cancel',
+            success_url: 'http://localhost:3001/success',
+            cancel_url: 'http://localhost:3001/cancel',
             metadata: {
                 orderId: orderId
             },
