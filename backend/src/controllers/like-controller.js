@@ -1,10 +1,15 @@
 import Like from '../models/Like.js';
 import Post from '../models/Post.js'; 
+import Reel from '../models/Reel.js';
 
 export const toggleLike = async (req, res) => {
   try {
     const { targetId, onModel } = req.body;
     const userId = req.user.id;
+
+    if (!['posts', 'reels'].includes(onModel)) {
+      return res.status(400).json({ message: 'Loại nội dung không hợp lệ.' });
+    }
 
     // Kiểm tra like đã tồn tại chưa
     const existingLike = await Like.findOne({ userId, targetId, onModel });
@@ -13,19 +18,19 @@ export const toggleLike = async (req, res) => {
       // Nếu đã like → unlike
       await Like.deleteOne({ _id: existingLike._id });
 
-      // Giảm likesCount nếu là Post (tuỳ bạn mở rộng cho Comment, Reel)
-      if (onModel === 'Post') {
+      // Giảm likesCount nếu là Post hoặc Reel
+      if (onModel === 'posts') {
         await Post.findByIdAndUpdate(targetId, { $inc: { likesCount: -1 } });
-      }
+      } else await Reel.findByIdAndUpdate(targetId, { $inc: { likesCount: -1 } });
 
       return res.status(200).json({ liked: false, message: 'Đã bỏ like.' });
     } else {
       // Nếu chưa like → thêm like
       await Like.create({ userId, targetId, onModel });
 
-      if (onModel === 'Post') {
+      if (onModel === 'posts') {
         await Post.findByIdAndUpdate(targetId, { $inc: { likesCount: 1 } });
-      }
+      } else await Reel.findByIdAndUpdate(targetId, { $inc: { likesCount: 1 } });
 
       return res.status(201).json({ liked: true, message: 'Đã like.' });
     }

@@ -16,8 +16,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import ReelRouter from "./routes/reel-router.js";
 import AdminRouter from "./routes/admin-router.js";
-import OrderRouter from "./routes/ingredient-order-router.js"
-
+import OrderRouter from "./routes/ingredient-order-router.js";
+import LikeRouter from "./routes/like-router.js";
 dotenv.config();
 
 const app = express();
@@ -56,6 +56,7 @@ app.use("/ingredient",IngredientRouter)
 app.use("/reel",ReelRouter);
 app.use("/posts",PostRouter)
 app.use("/comment",CommentRouter)
+app.use("/like",LikeRouter)
 app.use("/messages", MessageRouter);
 app.use("/order", OrderRouter);
 app.use("/admin", AdminRouter);

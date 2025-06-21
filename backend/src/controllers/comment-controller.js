@@ -1,16 +1,23 @@
 import Comment from '../models/Comment.js';
 import Post from '../models/Post.js';
+import Reel from '../models/Reel.js';
 
 export const createComment = async (req, res) => {
   try {
-    const { postId, content } = req.body;
+    const { targetId, onModel, content } = req.body;
     const userId = req.user.id; // từ middleware xác thực
 
-    const comment = new Comment({ postId, userId, content });
+    if (!['posts', 'reels'].includes(onModel)) {
+      return res.status(400).json({ message: 'Loại nội dung không hợp lệ.' });
+    }
+    const comment = new Comment({ targetId, onModel,userId, content });
     await comment.save();
 
     // Tăng số lượng comment trong bài viết
-    await Post.findByIdAndUpdate(postId, { $inc: { commentsCount: 1 } });
+    if (onModel === 'posts'){
+      await Post.findByIdAndUpdate(targetId, { $inc: { commentsCount: 1 } });
+    } 
+    else await Reel.findByIdAndUpdate(targetId, { $inc: { commentsCount: 1 } });
 
     res.status(201).json(comment);
   } catch (error) {
@@ -18,9 +25,13 @@ export const createComment = async (req, res) => {
   }
 };
 
-export const getCommentsByPost = async (req, res) => {
+export const getCommentsByTarget = async (req, res) => {
   try {
-    const comments = await Comment.find({ postId: req.params.postId })
+    const { targetId, onModel } = req.query;
+    if (!['posts', 'reels'].includes(onModel)) {
+      return res.status(400).json({ message: 'Loại nội dung không hợp lệ.' });
+    }
+    const comments = await Comment.find({ targetId, onModel })
       .populate('userId', 'name avatar') // lấy thêm info người bình luận
       .sort({ createAt: -1 });
 
@@ -44,9 +55,11 @@ export const deleteComment = async (req, res) => {
 
     await Comment.findByIdAndDelete(req.params.id);
 
-    // Giảm số lượng comment trong bài viết
-    await Post.findByIdAndUpdate(comment.postId, { $inc: { commentsCount: -1 } });
-
+    // Giảm số lượng comment nếu là bài viết
+    if (comment.onModel === 'posts') {
+      await Post.findByIdAndUpdate(comment.targetId, { $inc: { commentsCount: -1 } });
+    } else  await Reel.findByIdAndUpdate(comment.targetId, { $inc: { commentsCount: -1 } });
+    
     res.status(200).json({ message: 'Đã xoá bình luận.' });
   } catch (error) {
     res.status(500).json({ message: 'Không thể xoá bình luận.', error });

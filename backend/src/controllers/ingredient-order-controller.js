@@ -72,3 +72,29 @@ export const orderIngredients = async (req, res) => {
     res.status(500).json({ message: 'Lỗi khi đặt nguyên liệu.', error: error.message });
   }
 };
+
+export const getMyOrders = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const orders = await IngredientOrder.find({ userId })
+      .populate('items.ingredient', 'name unit');
+
+    res.status(200).json(orders);
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi khi lấy đơn hàng của bạn.', error: error.message });
+  }
+};
+
+export const getAllOrders = async (req, res) => {
+  try {
+
+    const orders = await IngredientOrder.find()
+      .populate('userId') 
+      .populate('items.ingredient', 'name unit'); // Lấy thông tin nguyên liệu
+
+    res.status(200).json(orders);
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi khi lấy danh sách đơn hàng.', error: error.message });
+  }
+};

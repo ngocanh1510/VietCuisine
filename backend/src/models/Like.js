@@ -14,7 +14,7 @@ const LikeSchema = new mongoose.Schema({
   onModel: {
     type: String,
     required: true,
-    enum: ['Post','Reel'] // có thể mở rộng nếu cần
+    enum: ['posts','reels'] // có thể mở rộng nếu cần
   }
 }, {
   timestamps: { createdAt: 'createAt', updatedAt: false }

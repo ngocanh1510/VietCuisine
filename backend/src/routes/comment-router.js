@@ -1,8 +1,8 @@
 import express from 'express';
 import {
   createComment,
-  getCommentsByPost,
-  deleteComment
+  deleteComment,
+  getCommentsByTarget
 } from '../controllers/comment-controller.js';
 
 import authMiddleware from "../middlewares/auth-middlewares.js";
@@ -10,6 +10,6 @@ import authMiddleware from "../middlewares/auth-middlewares.js";
 const router = express.Router();
 
 router.post('/', authMiddleware, createComment);             
-router.get('/:postId', getCommentsByPost);                   
+router.get('/', getCommentsByTarget);                   
 router.delete('/:id', authMiddleware, deleteComment);         
 export default router;

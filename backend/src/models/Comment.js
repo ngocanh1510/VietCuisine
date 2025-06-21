@@ -1,11 +1,18 @@
 import mongoose from 'mongoose';
 
 const CommentSchema = new mongoose.Schema({
-  postId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'posts',
-    required: true
+  targetId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      refPath: 'onModel'  // dùng cho liên kết động nếu cần
+    },
+
+  onModel: {
+    type: String,
+    required: true,
+    enum: ['posts','reels'] // có thể mở rộng nếu cần
   },
+
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'users',
