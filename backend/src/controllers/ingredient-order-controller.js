@@ -1,4 +1,4 @@
-import Ingredient from '../models/Ingredient.js'; 
+import IngredientModel from '../models/Ingredient.js'; 
 import IngredientOrder from '../models/IngredientOrder.js';
 import Stripe from "stripe";
 
@@ -102,62 +102,78 @@ export const getAllOrders = async (req, res) => {
 };
 
 const stripe = new Stripe ( process.env.STRIPE_SECRET_KEY);
-// Thanh toán
+
 export const payment = async (req, res) => {
-    try {
-        const { items, orderId, couponCode } = req.body;
+  try {
+    const { orderId, couponCode } = req.body;
 
-        //Danh sách sản phẩm
-        const lineItems = items.map((item) => ({
-            price_data: {
-                currency: 'VND',
-                product_data: {
-                    name: item.name,
-                    images: [item.image],
-                    description:item.unit
-                },
-                unit_amount: item.pricePerUnit,
-            },
-            quantity: item.quantity,
-        }));
-
-        let discounts = [];
-
-        // Nếu có couponCode từ frontend → kiểm tra trên Stripe
-        if (couponCode) {
-            const promotionCodes = await stripe.promotionCodes.list({
-                code: couponCode,
-                active: true,
-                limit: 1,
-            });
-
-            if (promotionCodes.data.length > 0) {
-                discounts.push({ promotion_code: promotionCodes.data[0].id });
-            } else {
-                return res.status(400).json({ error: 'Mã giảm giá không hợp lệ' });
-            }
-        }
-
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            line_items: lineItems,
-            mode: 'payment',
-            locale: 'vi',
-            discounts: discounts, // Chỉ thêm nếu có mã giảm giá hợp lệ
-            success_url: 'http://localhost:3001/success',
-            cancel_url: 'http://localhost:3001/cancel',
-            metadata: {
-                orderId: orderId
-            },
-        });
-
-        res.json({
-          sessionId: session.id,
-          url: session.url
-        });
-
-    } catch (error) {
-        res.status(500).send('Lỗi khi tạo session thanh toán');
-        console.error("Lỗi khi tạo session thanh toán:", error);
+    if (!orderId) {
+      return res.status(400).json({ error: "Thiếu orderId" });
     }
+
+    const order = await IngredientOrder.findById(orderId).lean();
+    if (!order || !Array.isArray(order.items) || order.items.length === 0) {
+      return res.status(404).json({ error: "Không tìm thấy đơn hàng hoặc đơn hàng rỗng" });
+    }
+
+    const ingredientIds = order.items.map(item => item.ingredient);
+    const ingredients = await IngredientModel.find({ _id: { $in: ingredientIds } });
+
+    const lineItems = order.items.map((item) => {
+      const ingredient = ingredients.find(ing => ing._id.toString() === item.ingredient.toString());
+
+      if (!ingredient) {
+        throw new Error(`Nguyên liệu ${item.ingredient} không tồn tại`);
+      }
+
+      return {
+        price_data: {
+          currency: 'VND',
+          unit_amount: ingredient.unitPrice, 
+          product_data: {
+            name: ingredient.name,
+            images: [ingredient.imageUrl],
+            description: ingredient.unit
+          },
+        },
+        quantity: item.quantity
+      };
+    });
+
+    let discounts = [];
+    if (couponCode) {
+      const promotionCodes = await stripe.promotionCodes.list({
+        code: couponCode,
+        active: true,
+        limit: 1,
+      });
+
+      if (promotionCodes.data.length > 0) {
+        discounts.push({ promotion_code: promotionCodes.data[0].id });
+      } else {
+        return res.status(400).json({ error: 'Mã giảm giá không hợp lệ' });
+      }
+    }
+
+    // 6. Tạo session thanh toán
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: lineItems,
+      mode: 'payment',
+      locale: 'vi',
+      discounts,
+      success_url: 'http://localhost:3001/success',
+      cancel_url: 'http://localhost:3001/cancel',
+      metadata: { orderId },
+    });
+
+    res.json({
+      sessionId: session.id,
+      url: session.url
+    });
+
+  } catch (error) {
+    console.error("Lỗi khi tạo session thanh toán:", error);
+    res.status(500).send('Lỗi khi tạo session thanh toán');
+  }
 };
