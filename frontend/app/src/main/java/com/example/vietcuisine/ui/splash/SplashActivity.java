@@ -1,4 +1,4 @@
-package com.example.vietcuisine;
+package com.example.vietcuisine.ui.splash;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -6,6 +6,7 @@ import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.vietcuisine.R;
 import com.example.vietcuisine.ui.auth.LoginActivity;
 import com.example.vietcuisine.ui.main.MainActivity;
 

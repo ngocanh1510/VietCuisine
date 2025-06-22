@@ -6,4 +6,10 @@
     </style>
 
     <style name="Theme.VietCuisine" parent="Base.Theme.VietCuisine" />
+    
+    <!-- NoActionBar theme variant -->
+    <style name="Theme.VietCuisine.NoActionBar" parent="Theme.VietCuisine">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
 </resources>
