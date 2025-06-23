@@ -1,5 +1,6 @@
 import IngredientModel from '../models/Ingredient.js'; 
 import IngredientOrder from '../models/IngredientOrder.js';
+import Cart from '../models/Cart.js';
 import Stripe from "stripe";
 
 export const orderIngredients = async (req, res) => {
@@ -189,3 +190,94 @@ export const getOrderById = async(req, res, next) =>{
   }
 
 }
+
+export const orderFromCart = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { ingredientIds, shippingAddress, paymentMethod } = req.body;
+
+    if (!shippingAddress?.recipientName || !shippingAddress?.phone || !shippingAddress?.address) {
+      return res.status(400).json({ message: 'Thiếu thông tin giao hàng.' });
+    }
+
+    const cart = await Cart.findOne({ userId }).populate('items.ingredient');
+    if (!cart || cart.items.length === 0) {
+      return res.status(400).json({ message: 'Giỏ hàng trống.' });
+    }
+
+    // Lọc item theo ingredientIds nếu được truyền
+    let itemsToOrder = cart.items;
+    if (Array.isArray(ingredientIds) && ingredientIds.length > 0) {
+      itemsToOrder = cart.items.filter(item =>
+        ingredientIds.includes(item.ingredient._id.toString())
+      );
+
+      if (itemsToOrder.length === 0) {
+        return res.status(400).json({ message: 'Không tìm thấy nguyên liệu phù hợp trong giỏ hàng.' });
+      }
+    }
+
+    const orderedItems = [];
+    let totalCost = 0;
+    const detailedItems = [];
+
+    for (const item of itemsToOrder) {
+      const ingredient = item.ingredient;
+
+      if (ingredient.stock < item.quantity) {
+        return res.status(400).json({
+          message: `Không đủ ${ingredient.name} trong kho. Còn lại: ${ingredient.stock}`
+        });
+      }
+
+      ingredient.stock -= item.quantity;
+      await ingredient.save();
+
+      orderedItems.push({
+        ingredient: ingredient._id,
+        quantity: item.quantity,
+        unitPriceAtTime: ingredient.unitPrice
+      });
+
+      totalCost += ingredient.unitPrice * item.quantity;
+
+      detailedItems.push({
+        name: ingredient.name,
+        quantity: item.quantity,
+        unit: ingredient.unit,
+        pricePerUnit: ingredient.unitPrice,
+        image: ingredient.imageUrl,
+        subtotal: ingredient.unitPrice * item.quantity
+      });
+    }
+
+    const newOrder = new IngredientOrder({
+      userId,
+      items: orderedItems,
+      totalCost,
+      paymentMethod,
+      shippingAddress
+    });
+
+    await newOrder.save();
+
+    // Cập nhật lại giỏ hàng: xoá các item đã đặt
+    cart.items = cart.items.filter(item =>
+      !itemsToOrder.some(ordered => ordered.ingredient._id.equals(item.ingredient._id))
+    );
+    await cart.save();
+
+    res.status(201).json({
+      message: 'Đặt hàng từ giỏ thành công.',
+      orderId: newOrder._id,
+      totalCost,
+      items: detailedItems,
+      shippingAddress,
+      paymentMethod,
+      paymentStatus: newOrder.paymentStatus
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi khi đặt hàng từ giỏ.', error: error.message });
+  }
+};
