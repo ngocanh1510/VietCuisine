@@ -370,19 +370,13 @@ export const toggleLikeRecipe = async (req, res) => {
 // Save/Unsave Recipe
 export const toggleSaveRecipe = async (req, res) => {
   const { id } = req.params; // Recipe ID
-  const accountId = req.user.id;
+  const userId = req.user.id;
 
-  if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(accountId)) {
-    return res.status(400).json({ status: false, message: "Không tồn tại Recipe ID hoặc Account ID" });
+  if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ status: false, message: "Không tồn tại Recipe ID hoặc user ID" });
   }
 
   try {
-    const account = await AccountModel.findById(accountId).populate("user");
-    if (!account || !account.user) {
-      return res.status(404).json({ status: false, message: "Không tìm thấy User từ Account ID" });
-    }
-
-    const userId = account.user._id; // ID thực của User
     const user = await UserModel.findById(userId);
     if (!user) {
       return res.status(404).json({ status: false, message: "Không tìm thấy User" });
@@ -500,21 +494,9 @@ export const commentOnRecipe = async (req, res) => {
 
 // Xuất danh sách đã lưu
 export const getSavedRecipes = async (req, res) => {
-  const accountId = req.user.id; // Lấy accountId từ middleware xác thực (JWT)
-
-  if (!mongoose.Types.ObjectId.isValid(accountId)) {
-    return res.status(400).json({ status: false, message: "Invalid Account ID" });
-  }
-
+  const userId = req.user.id; 
   try {
-    // Tìm user thông qua accountId
-    const account = await AccountModel.findById(accountId).populate("user");
-    if (!account || !account.user) {
-      return res.status(404).json({ status: false, message: "User not found" });
-    }
-
-    const userId = account.user._id; // Lấy userId thực
-    const user = await UserModel.findById(userId).populate("savedRecipes"); // Lấy các công thức đã lưu
+    const user = await UserModel.findById(userId).populate("savedRecipes"); 
     if (!user) {
       return res.status(404).json({ status: false, message: "User not found" });
     }
