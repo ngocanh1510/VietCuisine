@@ -23,7 +23,7 @@ const authMiddleware = async (req, res, next) => {
         role: account.role    
       };
       
-      // console.log('req.user:', req.user); 
+      console.log('req.user:', req.user); 
       next();
     } catch (err) {
       return res.status(401).json({ message: "Invalid token" });

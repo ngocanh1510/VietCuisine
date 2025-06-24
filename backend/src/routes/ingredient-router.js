@@ -7,9 +7,9 @@ import uploadcsv from "../middlewares/uploadcsv-middleware.js";
 
 const IngredientRouter = express.Router();
     IngredientRouter.get("/all",getAllIngredient);
-    IngredientRouter.post("/add",authMiddleware,authorizeRoles('admin'),upload.single('image'),addIngredient);
-    IngredientRouter.put("/:id",authMiddleware,authorizeRoles('admin'),upload.single('image'),updateIngredient);
+    IngredientRouter.post("/add",authMiddleware,authorizeRoles('admin'),upload.single('file'),addIngredient);
+    IngredientRouter.put("/:id",authMiddleware,authorizeRoles('admin'),upload.single('file'),updateIngredient);
     IngredientRouter.delete("/:id",authMiddleware,authorizeRoles('admin'), deleteIngredient);
     IngredientRouter.get("/search",searchIngredient)
-    IngredientRouter.post("/updateStock",authMiddleware,authorizeRoles('admin'), uploadcsv.single("file"), updateStockUnified);
+    IngredientRouter.post("/updateStock",authMiddleware,authorizeRoles('admin'), upload.single("file"), updateStockUnified);
 export default IngredientRouter;

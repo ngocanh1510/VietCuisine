@@ -22,40 +22,77 @@ export const getAllIngredient = async (req, res, next) => {
 };
 
 //Thêm nguyên liệu
-export const addIngredient = async(req, res, next)=>{
-  try{
-    const {name, unit, unitPrice, category, stock} = req.body;
-    const imageUrl = req.file?.path;
+export const addIngredient = async (req, res, next) => {
+  try {
+    let updates = [];
 
-      // Kiểm tra dữ liệu đầu vào
-      if (!name || !unit || !unitPrice ||!category ||!stock) {
-        return res.status(422).json({ message: "Invalid input" });
-      }
+    // Nếu có file upload
+    if (req.file) {
+      const ext = req.file.originalname.split('.').pop().toLowerCase();
 
-    const existingName = await IngredientModel.findOne({ name });
-      if (existingName) {
-        return res.status(400).json({
-          status: false,
-          message: 'Name already in use'
+      if (ext === 'csv') {
+        const rows = [];
+        await new Promise((resolve, reject) => {
+          fs.createReadStream(req.file.path)
+            .pipe(csv())
+            .on('data', (row) => rows.push(row))
+            .on('end', () => resolve())
+            .on('error', reject);
         });
+        fs.unlinkSync(req.file.path);
+        updates = rows;
+      } else if (ext === 'xlsx') {
+        const workbook = xlsx.readFile(req.file.path);
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        updates = xlsx.utils.sheet_to_json(sheet);
+        fs.unlinkSync(req.file.path);
       }
+    } else {
+      updates = Array.isArray(req.body) ? req.body : [req.body]; // Cho phép nhập 1 hoặc nhiều
+    }
 
-    const ingredient = new IngredientModel({
-      name:name,
-      unitPrice:unitPrice,
-      unit:unit,
-      imageUrl:imageUrl,
-      category:category,
-      stock:stock
-    })
+    if (!Array.isArray(updates) || updates.length === 0) {
+      return res.status(400).json({ status: false, message: "Dữ liệu không hợp lệ" });
+    }
 
-    await ingredient.save();
-    return res.status(201).json({ message: "Ingredient added successfully", recipe: ingredient });
+    const inserted = [];
+
+    for (const item of updates) {
+      const name = item.name?.trim();
+      const unit = item.unit;
+      const unitPrice = item.unitPrice;
+      const category = item.category;
+      const stock = item.stock;
+      const imageUrl = req.file?.path || item.imageUrl || ""; // Ưu tiên file ảnh nếu có
+
+      if (!name || !unit || !unitPrice || !category || !stock) continue;
+
+      const existing = await IngredientModel.findOne({ name });
+      if (existing) continue;
+
+      const ingredient = new IngredientModel({
+        name,
+        unit,
+        unitPrice: Number(unitPrice),
+        stock: Number(stock),
+        category,
+        imageUrl      });
+
+      await ingredient.save();
+      inserted.push(ingredient);
+    }
+
+    return res.status(201).json({
+      message: "Thêm nguyên liệu thành công",
+      count: inserted.length,
+      data: inserted
+    });
+  } catch (err) {
+    console.error("Add ingredient failed:", err);
+    return res.status(500).json({ message: "Lỗi server", error: err.message });
   }
-  catch (err) {
-    return res.status(500).json({ message: "Failed to add ingredient", error: err.message });
-  }
-}
+};
+
 
 //Chỉnh sửa thông tin nguyên liệu
 export const updateIngredient = async(req, res)=>{
@@ -157,17 +194,19 @@ export const searchIngredient = async (req, res) => {
   const { keyword } = req.query;
 
   try {
-    const results = await IngredientModel.aggregate([
-      {
-        $search: {
-          index: "unsignedIngredient", // hoặc tên bạn đặt
-          text: {
-            query: keyword,
-            path: "name"
-          }
+      const results = await IngredientModel.aggregate([
+    {
+      $search: {
+        index: "unsignedIngredient",
+        autocomplete: {
+          query: keyword,
+          path: "name"
         }
       }
-    ]);
+    },
+    { $limit: 5 }
+  ]);
+
 
     res.status(200).json({ status: true, ingredients: results });
   } catch (err) {
