@@ -18,6 +18,7 @@ import ReelRouter from "./routes/reel-router.js";
 import AdminRouter from "./routes/admin-router.js";
 import OrderRouter from "./routes/ingredient-order-router.js";
 import LikeRouter from "./routes/like-router.js";
+import CartRouter from "./routes/cart-router.js";
 import webhookRouter from "./routes/webhook-router.js";
 dotenv.config();
 
@@ -60,6 +61,7 @@ app.use("/comment",CommentRouter)
 app.use("/like",LikeRouter)
 app.use("/messages", MessageRouter);
 app.use("/order", OrderRouter);
+app.use("/cart",CartRouter);
 app.use("/admin", AdminRouter);
 // Socket.IO logic
 io.on("connection", (socket) => {
