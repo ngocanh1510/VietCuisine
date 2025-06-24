@@ -658,16 +658,17 @@ export const markNotificationAsRead = async (req, res) => {
   
     try {
       const results = await RecipeModel.aggregate([
-        {
-          $search: {
-            index: "unsignedRecipe", // hoặc tên bạn đặt
-            text: {
-              query: keyword,
-              path: "title"
-            }
+      {
+        $search: {
+          index: "unsignedRecipe", // tên index bạn đặt trong MongoDB Atlas
+          autocomplete: {
+            query: keyword,
+            path: "title"
           }
         }
-      ]);
+      }
+    ]);
+
   
       res.status(200).json({ status: true, recipes: results });
     } catch (err) {
