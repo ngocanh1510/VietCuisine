@@ -50,7 +50,7 @@ const PageSidebar = (props: {
   }, [location.pathname])
 
   return (
-    <Sider theme='light'>
+    <Sider theme='light' width={240}>
       <Menu openKeys={lastOpenedMenu} onOpenChange={onOpenChange} selectedKeys={selectedKeys} mode="inline" items={menuItems} onClick={onSwitchMenu} />
     </Sider>
   )

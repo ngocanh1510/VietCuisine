@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table, InputNumber, AutoComplete, Button, Popconfirm, message, Upload } from 'antd';
 import { DeleteOutlined, UploadOutlined } from '@ant-design/icons';
 import axios from 'axios';
@@ -9,6 +9,15 @@ const InventoryTable = () => {
     getEmptyRow()
   ]);
   const [searchOptions, setSearchOptions] = useState([]);
+   const [token, setToken] = useState("");
+      
+        useEffect(() => {
+          const storedToken = localStorage.getItem("token");
+          console.log(storedToken);
+          if (storedToken) {
+            setToken(storedToken);
+          }
+        }, []);
 
   function getEmptyRow() {
     return {
@@ -93,10 +102,9 @@ const handleChange = (value: number, index: number, field: NumberField) => {
   const handleSubmit = async () => {
     const payload = dataSource
       .filter(item => item.ingredientId && item.quantity > 0)
-      .map(({ ingredientId, quantity, unitPrice }) => ({
+      .map(({ ingredientId, quantity }) => ({
         ingredientId,
-        quantity,
-        unitPrice
+        quantity
       }));
 
     if (payload.length === 0) {
@@ -104,38 +112,75 @@ const handleChange = (value: number, index: number, field: NumberField) => {
     }
 
     try {
-      const res = await axios.post("http://localhost:3001/ingredient/updateStockUnified", payload);
+      console.log("Submitting payload:", payload);
+      const res = await axios.post("http://localhost:3001/ingredient/updateStock", payload,
+        {
+        headers: { 
+        Authorization: `Bearer ${token}`
+        },
+      }
+      );
       message.success("Nhập kho thành công!");
+      setDataSource([getEmptyRow()]);
     } catch (err) {
       console.error("Lỗi khi nhập kho:", err);
       message.error("Lỗi khi nhập kho.");
     }
   };
 
-  const handleUpload = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e: any) => {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: "array" });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const json: any[] = XLSX.utils.sheet_to_json(sheet);
+  const handleUpload = async (file: File) => {
+  const reader = new FileReader();
+  reader.onload = async (e: any) => {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: "array" });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const json: any[] = XLSX.utils.sheet_to_json(sheet);
 
-      const converted = json.map((item, idx) => ({
+    const updatedRows = await Promise.all(json.map(async (item, idx) => {
+      const name = item.name?.trim();
+      if (!name) return null;
+
+      try {
+        // Gọi API tìm theo tên nguyên liệu
+        const res = await axios.get(`http://localhost:3001/ingredient/search?keyword=${name}`);
+        const matched = res.data.ingredients?.find((ing: any) => ing.name === name);
+
+        if (matched) {
+          return {
+            key: Date.now() + idx,
+            ingredientId: matched._id,
+            name: matched.name,
+            stock: matched.stock || 0,
+            unit: matched.unit || '',
+            quantity: Number(item.quantity || 0),
+            unitPrice: matched.unitPrice || 0,
+            totalPrice: Number(item.quantity || 0) * (matched.unitPrice || 0),
+          };
+        }
+      } catch (err) {
+        console.warn("Không tìm thấy nguyên liệu:", name);
+      }
+
+      // Nếu không tìm thấy thì vẫn trả về dòng trống
+      return {
         key: Date.now() + idx,
-        ingredientId: '', // bạn có thể map thêm ID nếu cần
-        name: item.name || '',
-        stock: item.stock || 0,
-        unit: item.unit || '',
+        ingredientId: '',
+        name: name,
+        stock: 0,
+        unit: '',
         quantity: Number(item.quantity || 0),
         unitPrice: Number(item.unitPrice || 0),
         totalPrice: Number(item.quantity || 0) * Number(item.unitPrice || 0),
-      }));
+      };
+    }));
 
-      setDataSource(converted);
-    };
-    reader.readAsArrayBuffer(file);
-    return false; // không upload lên server
+    // Lọc null nếu có dòng lỗi
+    setDataSource(updatedRows.filter(r => r !== null));
   };
+  reader.readAsArrayBuffer(file);
+  return false; // ngăn upload lên server
+};
+
 
   const columns = [
     {

@@ -20,7 +20,8 @@ const DemoTable: React.FC = () => {
     try {
       setLoading(true);
       const response = await axios.get("http://localhost:3001/ingredient/all");
-      const transformedData = response.data.map((ingredient: any) => ({
+      console.log("Response from API:", response.data); // In ra dữ liệu nhận được từ API
+      const transformedData = response.data.ingredients.map((ingredient: any) => ({
         key: ingredient._id, // key từ backend (MongoDB ID)
         name:ingredient.name,
         unit: ingredient.unit,
@@ -31,8 +32,8 @@ const DemoTable: React.FC = () => {
       }));
       setData(transformedData); // Cập nhật state với dữ liệu đã chuyển đổi
     } catch (error) {
-      console.error("Failed to fetch theaters:", error);
-      message.error("Failed to fetch theaters. Please try again.");
+      console.error("Failed to fetch ingredient:", error);
+      message.error("Failed to fetch ingredient. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -62,15 +63,21 @@ const columns: TableProps<DataType>["columns"] = [
     key: "unitPrice",
   },
   {
-    title: "Image",
-    dataIndex: "imageUrl",
-    key: "imageUrl",
-    render: (text) => (
-      <a href={text} target="_blank" rel="noopener noreferrer">
-        {text.length > 30 ? `${text.slice(0, 30)}...` : text}
-      </a>
-    ), // Chỉ hiển thị 30 ký tự đầu và cho phép mở URL
-  }
+      title: "Stock",
+      dataIndex: "stock",
+      key: "stock",
+    },
+    {
+      title: "Category",
+      dataIndex: "category",
+      key: "category",
+    },
+    {
+      title: "Image",
+      dataIndex: "imageUrl",
+      key: "imageUrl",
+      render: (imageUrl: string) => <img src={imageUrl} alt="image" style={{ width: "50px" }} />,
+    }
 ];
 
   return (

@@ -20,6 +20,7 @@ import OrderRouter from "./routes/ingredient-order-router.js";
 import LikeRouter from "./routes/like-router.js";
 import CartRouter from "./routes/cart-router.js";
 import webhookRouter from "./routes/webhook-router.js";
+import DashboardRouter from "./routes/dashboard-router.js";
 dotenv.config();
 
 const app = express();
@@ -63,6 +64,7 @@ app.use("/messages", MessageRouter);
 app.use("/order", OrderRouter);
 app.use("/cart",CartRouter);
 app.use("/admin", AdminRouter);
+app.use("/dashboard",DashboardRouter)
 // Socket.IO logic
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);

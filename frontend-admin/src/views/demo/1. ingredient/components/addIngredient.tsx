@@ -1,6 +1,16 @@
-import { Button, Form, Input, Upload, InputNumber, Select } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
 import React, { useState, useEffect } from "react";
+import {
+  Button,
+  Form,
+  Input,
+  InputNumber,
+  Select,
+  Upload,
+  message,
+  Modal,
+  Table,
+} from "antd";
+import { UploadOutlined, PlusOutlined } from "@ant-design/icons";
 import * as XLSX from "xlsx";
 import axios from "axios";
 
@@ -10,112 +20,166 @@ const IngredientForm: React.FC = () => {
   const [form] = Form.useForm();
   const [fileList, setFileList] = useState<any[]>([]);
   const [token, setToken] = useState("");
-  
-    useEffect(() => {
-      const storedToken = localStorage.getItem("token");
-      console.log(storedToken);
-      if (storedToken) {
-        setToken(storedToken);
-      }
-    }, []);
+  const [excelModalVisible, setExcelModalVisible] = useState(false);
+  const [parsedIngredients, setParsedIngredients] = useState<any[]>([]);
 
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) setToken(storedToken);
+  }, []);
+
+  // Submit form nhập tay
   const onFinish = async (values: any) => {
     try {
-      const formData = new FormData();
-      formData.append("name", values.name);
-      formData.append("unit", values.unit);
-      formData.append("unitPrice", values.unitPrice);
-      formData.append("stock", values.stock);
-      formData.append("category", values.category);
-      if (fileList.length > 0) {
-        formData.append("image", fileList[0].originFileObj);
-      }
+      const payload = [{
+        ...values,
+        imageUrl: fileList[0]?.originFileObj?.name || "",
+      }];
 
-      console.log(formData)
-      const res = await axios.post("http://localhost:3001/ingredient/add", formData, {
-        headers: { "Content-Type": "multipart/form-data" ,
-        Authorization: `Bearer ${token}`
+      await axios.post("http://localhost:3001/ingredient/add", payload, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
       });
 
-      alert("Nguyên liệu đã được thêm thành công!");
-      console.log(res.data);
+      message.success("Thêm nguyên liệu thành công!");
       form.resetFields();
       setFileList([]);
     } catch (err: any) {
-      console.error("Lỗi khi thêm nguyên liệu:", err.response?.data || err.message);
+      console.error("Lỗi:", err.response?.data || err.message);
+      message.error("Thêm nguyên liệu thất bại.");
     }
   };
 
-  const handleUpload = (file: any) => {
+  // Parse Excel và lưu vào state
+  const handleExcelUpload = async (file: File) => {
     const reader = new FileReader();
-    reader.onload = (e: any) => {
+    reader.onload = async (e: any) => {
       const data = new Uint8Array(e.target.result);
       const workbook = XLSX.read(data, { type: "array" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const json = XLSX.utils.sheet_to_json(sheet);
-      console.log("Excel data:", json);
-
-      // Gửi bulk qua API nếu muốn
-      axios.post("http://localhost:3001/ingredient/bulk-upload", json)
-        .then(() => alert("Tải danh sách nguyên liệu thành công!"))
-        .catch((err) => console.error("Lỗi:", err));
+      setParsedIngredients(json);
+      message.success("Đã đọc file Excel! Kiểm tra bảng bên dưới.");
     };
     reader.readAsArrayBuffer(file);
     return false;
   };
 
+  // Gửi mảng parsed từ Excel lên BE
+  const handleExcelSubmit = async () => {
+    try {
+      await axios.post("http://localhost:3001/ingredient/add", parsedIngredients, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      message.success("Thêm nguyên liệu thành công!");
+      setParsedIngredients([]);
+      setExcelModalVisible(false);
+    } catch (err: any) {
+      console.error("Lỗi Excel:", err.response?.data || err.message);
+      message.error("Không thể thêm nguyên liệu từ Excel");
+    }
+  };
+
   return (
-    <Form layout="vertical" onFinish={onFinish} form={form}>
-      <Form.Item name="name" label="Tên nguyên liệu" rules={[{ required: true }]}>
-        <Input />
-      </Form.Item>
+    <div style={{ position: "relative" }}>
+      {/* Nút mở modal Excel */}
+      <Button
+        type="primary"
+        icon={<UploadOutlined />}
+        style={{ position: "absolute", right: 0, top: 0, zIndex: 1 }}
+        onClick={() => setExcelModalVisible(true)}
+      >
+        Thêm từ Excel
+      </Button>
 
-      <Form.Item name="unit" label="Đơn vị" rules={[{ required: true }]}>
-       <Select mode="tags" style={{ width: '100%' }} placeholder="Nhập hoặc chọn đơn vị">
-          <Option value="100g">100g</Option>
-          <Option value="1kg">1kg</Option>
-          <Option value="1 cái">1 cái</Option>
-          <Option value="1 lít">1 lít</Option>
-          <Option value="1 bó">1 bó</Option>
-          <Option value="1 quả">1 quả</Option>
-        </Select>
-      </Form.Item>
+      <h2>Nhập nguyên liệu</h2>
+      <Form layout="vertical" form={form} onFinish={onFinish} >
+        <Form.Item name="name" label="Tên nguyên liệu" rules={[{ required: true }]}>
+          <Input />
+        </Form.Item>
 
-      <Form.Item name="unitPrice" label="Giá mỗi đơn vị" rules={[{ required: true }]}>
-        <InputNumber min={0} style={{ width: "100%" }} />
-      </Form.Item>
+        <Form.Item name="unit" label="Đơn vị" rules={[{ required: true }]}>
+          <Select mode="tags" placeholder="Nhập hoặc chọn đơn vị">
+            <Option value="100g">100g</Option>
+            <Option value="1kg">1kg</Option>
+            <Option value="1 cái">1 cái</Option>
+            <Option value="1 lít">1 lít</Option>
+            <Option value="1 bó">1 bó</Option>
+            <Option value="1 quả">1 quả</Option>
+          </Select>
+        </Form.Item>
 
-      <Form.Item name="stock" label="Số lượng trong kho" rules={[{ required: true }]}>
-        <InputNumber min={0} style={{ width: "100%" }} />
-      </Form.Item>
+        <Form.Item name="unitPrice" label="Giá mỗi đơn vị" rules={[{ required: true }]}>
+          <InputNumber min={0} style={{ width: "100%" }} />
+        </Form.Item>
 
-      <Form.Item name="category" label="Loại nguyên liệu" rules={[{ required: true }]}>
-        <Input />
-      </Form.Item>
+        <Form.Item name="stock" label="Số lượng trong kho" rules={[{ required: true }]}>
+          <InputNumber min={0} style={{ width: "100%" }} />
+        </Form.Item>
 
-      <Form.Item name="image" label="Ảnh nguyên liệu">
+        <Form.Item name="category" label="Loại nguyên liệu" rules={[{ required: true }]}>
+          <Input />
+        </Form.Item>
+
+        <Form.Item name="image" label="Ảnh nguyên liệu">
+          <Upload
+            beforeUpload={() => false}
+            onChange={({ fileList }) => setFileList(fileList)}
+            fileList={fileList}
+            listType="picture"
+          >
+            <Button icon={<UploadOutlined />}>Chọn ảnh</Button>
+          </Upload>
+        </Form.Item>
+
+        <Form.Item>
+          <Button type="primary" htmlType="submit">
+            Thêm nguyên liệu
+          </Button>
+        </Form.Item>
+      </Form>
+
+      {/* Modal Excel */}
+      <Modal
+        open={excelModalVisible}
+        title="Thêm nguyên liệu từ Excel"
+        onCancel={() => setExcelModalVisible(false)}
+        onOk={handleExcelSubmit}
+        okText="Thêm vào DB"
+        width={800}
+      >
         <Upload
-          beforeUpload={() => false}
-          onChange={({ fileList }) => setFileList(fileList)}
-          fileList={fileList}
-          listType="picture"
+          beforeUpload={handleExcelUpload}
+          accept=".xlsx,.xls"
+          showUploadList={false}
         >
-          <Button icon={<UploadOutlined />}>Chọn ảnh</Button>
+          <Button icon={<UploadOutlined />}>Chọn file Excel</Button>
         </Upload>
-      </Form.Item>
 
-      <Form.Item label="Tải danh sách từ Excel (.xlsx)">
-        <Upload beforeUpload={handleUpload} accept=".xlsx,.xls">
-          <Button icon={<UploadOutlined />}>Upload Excel</Button>
-        </Upload>
-      </Form.Item>
-
-      <Form.Item>
-        <Button type="primary" htmlType="submit">Thêm nguyên liệu</Button>
-      </Form.Item>
-
-    </Form>
+        {parsedIngredients.length > 0 && (
+          <Table
+            dataSource={parsedIngredients}
+            columns={[
+              { title: "Tên nguyên liệu", dataIndex: "name", key: "name" },
+              { title: "Đơn vị", dataIndex: "unit", key: "unit" },
+              { title: "Giá mỗi đơn vị", dataIndex: "unitPrice", key: "unitPrice" },
+              { title: "Tồn kho", dataIndex: "stock", key: "stock" },
+              { title: "Loại", dataIndex: "category", key: "category" },
+              { title: "Ảnh", dataIndex: "image", key: "image" },
+            ]}
+            rowKey={(record, index) => String(index)}
+            pagination={false}
+            style={{ marginTop: 16 }}
+            bordered
+          />
+        )}
+      </Modal>
+    </div>
   );
 };
 

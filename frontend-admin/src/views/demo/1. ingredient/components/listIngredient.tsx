@@ -1,6 +1,11 @@
-import { Space, Table, Modal, Form, Input, Button, message } from "antd";
+import { Space, Table, Modal, Form, Input, Button, message, Select, Upload } from "antd";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { UploadOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined, EyeOutlined,EditOutlined
+} from "@ant-design/icons";
+const { Option } = Select;
 
 const { confirm } = Modal;
 
@@ -20,6 +25,7 @@ const DemoTable: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingIngredient, setEditingIngredient] = useState<DataType | null>(null);
   const [token, setToken] = useState("");
+  const [fileList, setFileList] = useState<any[]>([]);
     
       useEffect(() => {
         const storedToken = localStorage.getItem("token");
@@ -108,8 +114,13 @@ const DemoTable: React.FC = () => {
     
       try {
         setLoading(true);
-        const response = await axios.put(`http://localhost:3001/ingredient/${editingIngredient.key}`, values);
-        message.success("Phim đã được cập nhật thành công!");
+        const response = await axios.put(`http://localhost:3001/ingredient/${editingIngredient.key}`, values,
+        {
+          headers: { 
+          Authorization: `Bearer ${token}`
+          },
+        });
+        message.success("Nguyên liệu đã được cập nhật thành công!");
     
         const updatedData = data.map((ingredient) =>
           ingredient.key === editingIngredient.key ? { ...ingredient, ...values } : ingredient
@@ -156,25 +167,24 @@ const DemoTable: React.FC = () => {
       title: "Category",
       dataIndex: "category",
       key: "category",
+      width: 100,
     },
     {
       title: "Image",
       dataIndex: "imageUrl",
       key: "imageUrl",
-      render: (imageUrl: string) => <img src={imageUrl} alt="poster" style={{ width: "50px" }} />,
+      align: "center" as const,
+      render: (imageUrl: string) => <img src={imageUrl} alt="poster" style={{ width: "60px" }} />,
     },
     {
       title: "Action",
       key: "action",
+      align: "center" as const,
+      width: 150,
       render: (_: any, record: DataType) => (
         <Space size="middle">
-          <a onClick={() => showEditModal(record)}>Edit</a>
-          <a
-            onClick={() => showDeleteConfirm(record.key, record.name)}
-            style={{ color: "red" }}
-          >
-            Delete
-          </a>
+          <Button icon={<EditOutlined />} onClick={() => showEditModal(record)} />
+          <Button danger icon={<DeleteOutlined />} onClick={() => showDeleteConfirm(record.key, record.name)} />
         </Space>
       ),
     },
@@ -182,7 +192,11 @@ const DemoTable: React.FC = () => {
 
   return (
     <>
-      <Table columns={columns} dataSource={data} loading={loading} />
+      <Table 
+        columns={columns} 
+        dataSource={data} 
+        loading={loading} 
+        bordered/>
 
       <Modal
         title="Edit Ingredient"
@@ -196,7 +210,14 @@ const DemoTable: React.FC = () => {
               <Input />
             </Form.Item>
             <Form.Item name="unit" label="Unit">
-              <Input />
+            <Select mode="tags" style={{ width: '100%' }} placeholder="Nhập hoặc chọn đơn vị">
+                <Option value="100g">100g</Option>
+                <Option value="1kg">1kg</Option>
+                <Option value="1 cái">1 cái</Option>
+                <Option value="1 lít">1 lít</Option>
+                <Option value="1 bó">1 bó</Option>
+                <Option value="1 quả">1 quả</Option>
+            </Select>
             </Form.Item>
             <Form.Item name="unitPrice" label="Price Per Unit">
               <Input />
@@ -207,9 +228,16 @@ const DemoTable: React.FC = () => {
             <Form.Item name="category" label="Category">
               <Input />
             </Form.Item>
-            <Form.Item name="imageUrl" label="Image">
-              <Input />
-            </Form.Item>
+            <Form.Item name="image" label="Ảnh nguyên liệu">
+            <Upload
+              beforeUpload={() => false}
+              onChange={({ fileList }) => setFileList(fileList)}
+              fileList={fileList}
+              listType="picture"
+            >
+              <Button icon={<UploadOutlined />}>Chọn ảnh</Button>
+            </Upload>
+      </Form.Item>
             <Form.Item>
               <Button type="primary" htmlType="submit">
                 Save

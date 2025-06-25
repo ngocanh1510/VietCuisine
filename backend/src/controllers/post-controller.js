@@ -1,3 +1,4 @@
+import Comment from '../models/Comment.js';
 import Post from '../models/Post.js';
 
 // Tạo bài viết
@@ -22,23 +23,73 @@ export const createPost = async (req, res) => {
 // Lấy tất cả bài viết
 export const getAllPosts = async (req, res) => {
   try {
-    const posts = await Post.find().sort({ createdAt: -1 });
-    res.status(200).json(posts);
+    // Lấy tất cả bài viết, kèm user và recipe
+    const posts = await Post.find()
+      .populate('userId')
+      .populate('recipeId')
+      .sort({ createdAt: -1 });
+
+    // Lấy tất cả bình luận dạng { postId -> [comments] }
+    const postIds = posts.map(post => post._id);
+    const comments = await Comment.find({
+      targetId: { $in: postIds },
+      onModel: 'posts'
+    }).populate('userId');
+
+    // Gom comment theo từng post
+    const commentMap = {};
+    comments.forEach(comment => {
+      const key = comment.targetId.toString();
+      if (!commentMap[key]) commentMap[key] = [];
+      commentMap[key].push(comment);
+    });
+
+    // Gộp comment vào từng post tương ứng
+    const fullPosts = posts.map(post => {
+      return {
+        ...post.toObject(),
+        comments: commentMap[post._id.toString()] || [],
+      };
+    });
+
+    res.status(200).json(fullPosts);
   } catch (error) {
-    res.status(500).json({ message: 'Không thể lấy bài viết.', error });
+    console.error("Lỗi khi lấy danh sách bài viết:", error);
+    res.status(500).json({ message: "Lỗi server khi lấy bài viết", error });
   }
 };
 
-// Lấy chi tiết một bài viết
 export const getPostById = async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id).populate('userId');
-    if (!post) return res.status(404).json({ message: 'Bài viết không tồn tại.' });
-    res.status(200).json(post);
+    // Lấy post và populate user + recipe
+    const post = await Post.findById(req.params.id)
+      .populate('userId')
+      .populate('recipeId');
+
+    if (!post) {
+      return res.status(404).json({ message: 'Bài viết không tồn tại.' });
+    }
+
+    // Lấy các bình luận liên quan đến bài post này
+    const comments = await Comment.find({
+      targetId: req.params.id,
+      onModel: 'posts'
+    })
+      .populate('userId')
+      .sort({ createAt: -1 });
+    console.log("Comments:", comments);
+    res.status(200).json({
+      ...post.toObject(),
+      comments
+    });
+
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi khi lấy bài viết.', error });
+    console.error("Lỗi khi lấy bài viết:", error);
+    res.status(500).json({ message: 'Lỗi server khi lấy bài viết.', error });
   }
 };
+
+
 
 // Cập nhật bài viết
 export const updatePost = async (req, res) => {

@@ -1,16 +1,17 @@
-import { FundFilled } from '@ant-design/icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faUser } from '@fortawesome/free-solid-svg-icons'
 import { AdminRouterItem } from "../../../router";
-import Showtimes from '.';
+import UserList from '.';
 
 const demoRoutes: AdminRouterItem[] = [
   {
     path: 'admin/user',
-    element: <Showtimes/>,
+    element: <UserList/>,
     meta: {
       label: "Quản lý người dùng",
       title: "Quản lý người dùng",
       key: "admin/user",
-      icon: <FundFilled />,
+      icon: <FontAwesomeIcon icon={faUser}  />
     },
     
   }

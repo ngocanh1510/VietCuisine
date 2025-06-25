@@ -1,8 +1,11 @@
-import { PlaySquareTwoTone, UnorderedListOutlined, VideoCameraAddOutlined } from "@ant-design/icons";
+import {  UnorderedListOutlined } from "@ant-design/icons";
 import { Outlet } from "react-router-dom";
 import { AdminRouterItem } from '../../../router';
 import DemoTable from "./components/listIngredientInStock";
 import InventoryTable from "./components/updateQuantity";
+import { faWarehouse } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import FormatListBulletedAddIcon from '@mui/icons-material/FormatListBulletedAdd';
 
 const demoRoutes: AdminRouterItem[] = [
 {
@@ -12,7 +15,7 @@ const demoRoutes: AdminRouterItem[] = [
         label: "Quản lý kho",
         title: "Quản lý kho",
         key: "admin/stock",
-        icon: <PlaySquareTwoTone/>,
+        icon: <FontAwesomeIcon icon={faWarehouse} />,
     },
     children: [
     {
@@ -32,7 +35,7 @@ const demoRoutes: AdminRouterItem[] = [
             label: "Nhập kho",
             title: "Nhập kho",
             key: "/admin/stock/updateQuantity",
-            icon: <VideoCameraAddOutlined/>,
+            icon: <FormatListBulletedAddIcon style={{ fontSize: 17 }} />
         },
     }
     ],

@@ -83,7 +83,7 @@ export const login = async (req, res) => {
         if (!account) {
             return res.status(404).json({ message: 'Tài khoản không tồn tại.' });
         }
-
+        const user = await User.findById(account.user);
 
         // Kiểm tra mật khẩu
         const isMatch = await bcrypt.compare(password, account.password);
@@ -98,7 +98,7 @@ export const login = async (req, res) => {
         res.json({ 
             message: 'Đăng nhập thành công!',
             token,
-            account });
+            account, user });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

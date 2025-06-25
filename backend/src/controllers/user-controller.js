@@ -1,4 +1,6 @@
+import AccountModel from "../models/Account.js";
 import Account from "../models/Account.js"
+import UserModel from "../models/User.js";
 
 export const getAllUsers = async (req, res) => {
   try {
@@ -14,23 +16,19 @@ export const getAllUsers = async (req, res) => {
 
 export const updateAccountStatus = async (req, res) => {
   try {
-    const { status } = req.body;
     const { id } = req.params;
+    const user = await AccountModel.findById(id);
+    if (!user) return res.status(404).json({ message: "User không tồn tại" });
 
-    if (!['active', 'banned'].includes(status)) {
-      return res.status(400).json({ message: 'Trạng thái không hợp lệ.' });
-    }
+    user.status = user.status === 'banned' ? 'active' : 'banned';
+    await user.save();
 
-    const account = await Account.findById(id);
-    if (!account) {
-      return res.status(404).json({ message: 'Không tìm thấy tài khoản.' });
-    }
-
-    account.status = status;
-    await account.save();
-
-    res.status(200).json({ message: 'Cập nhật trạng thái thành công.', account });
-  } catch (error) {
-    res.status(500).json({ message: 'Lỗi khi cập nhật trạng thái.', error });
+    res.json({
+      message: user.status === 'banned' ? "Đã cấm người dùng" : "Đã bỏ cấm",
+      user
+    });
+  } catch (err) {
+    console.error("Lỗi khi cập nhật trạng thái user:", err);
+    res.status(500).json({ message: "Lỗi server" });
   }
 };

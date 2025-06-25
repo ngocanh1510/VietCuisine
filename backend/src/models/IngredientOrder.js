@@ -52,7 +52,11 @@ const IngredientOrderSchema = new mongoose.Schema({
   orderedAt: {
     type: Date,
     default: Date.now
-  }
+  },
+  discount: {
+    type: Number,
+    default: 0
+  },
 });
 
 const IngredientOrder = mongoose.model('ingredient_orders', IngredientOrderSchema);

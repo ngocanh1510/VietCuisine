@@ -1,8 +1,11 @@
-import { PlaySquareTwoTone, UnorderedListOutlined, VideoCameraAddOutlined } from "@ant-design/icons";
+import { UnorderedListOutlined, VideoCameraAddOutlined } from "@ant-design/icons";
 import { Outlet } from "react-router-dom";
 import { AdminRouterItem } from '../../../router';
 import IngredientForm from "./components/addIngredient";
 import DemoTable from "./components/listIngredient";
+import { faCarrot } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import FormatListBulletedAddIcon from '@mui/icons-material/FormatListBulletedAdd';
 
 const demoRoutes: AdminRouterItem[] = [
 {
@@ -12,7 +15,7 @@ const demoRoutes: AdminRouterItem[] = [
         label: "Quản lý nguyên liệu",
         title: "Quản lý nguyên liệu",
         key: "/admin/ingredient",
-        icon: <PlaySquareTwoTone />,
+        icon: <FontAwesomeIcon icon={faCarrot} />
     },
     children: [
     {
@@ -32,7 +35,7 @@ const demoRoutes: AdminRouterItem[] = [
             label: "Thêm nguyên liệu",
             title: "Thêm nguyên liệu",
             key: "/admin/ingredient/addIngredient",
-            icon: <VideoCameraAddOutlined />,
+            icon: <FormatListBulletedAddIcon style={{ fontSize: 17 }} />
         },
     }
     ],

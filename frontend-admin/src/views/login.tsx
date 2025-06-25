@@ -8,7 +8,6 @@ const Login: React.FC = () => {
     const navigate = useNavigate();
 
     const onFinish = async (values: { username: string; password: string }) => {
-        console.log("Login Info:", values);
         setLoading(true);
         
         try {
@@ -19,10 +18,10 @@ const Login: React.FC = () => {
             });
            
             // Xử lý response thành công
-            const { token, account } = response.data;
+            const { token, user } = response.data;
             // Lưu token và thông tin người dùng vào localStorage
             localStorage.setItem("token", token);
-            localStorage.setItem("username", account.username);
+            localStorage.setItem("username", user.name);
             localStorage.setItem("isAuthenticated", "true");
             console.log("token", token)
 

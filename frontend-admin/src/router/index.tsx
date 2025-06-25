@@ -7,6 +7,7 @@ import { MenuItemType } from "antd/es/menu/interface";
 import Login from "../views/login.tsx";
 import ProtectedRoute from "../components/ProtectedRoutes.tsx";
 import ForgotPassword from "../components/ForgotPassWord.tsx";
+import OrderDetail from "../views/demo/4. order/component/orderDetail.tsx";
 export type AdminRouterItem = RouteObject & {
   // set antd menu props in meta
   meta?: MenuItemType
@@ -49,6 +50,10 @@ export default createBrowserRouter([
   {
     path:"/forgot-password",
     element: <ForgotPassword />
+  },
+  {
+    path:"/admin/order/:id",
+    element:<OrderDetail />
   },
   {
     path: "/",

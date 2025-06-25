@@ -22,35 +22,15 @@ export const getAllIngredient = async (req, res, next) => {
 };
 
 //Thêm nguyên liệu
-export const addIngredient = async (req, res, next) => {
+export const addIngredient = async (req, res) => {
   try {
     let updates = [];
-
-    // Nếu có file upload
-    if (req.file) {
-      const ext = req.file.originalname.split('.').pop().toLowerCase();
-
-      if (ext === 'csv') {
-        const rows = [];
-        await new Promise((resolve, reject) => {
-          fs.createReadStream(req.file.path)
-            .pipe(csv())
-            .on('data', (row) => rows.push(row))
-            .on('end', () => resolve())
-            .on('error', reject);
-        });
-        fs.unlinkSync(req.file.path);
-        updates = rows;
-      } else if (ext === 'xlsx') {
-        const workbook = xlsx.readFile(req.file.path);
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        updates = xlsx.utils.sheet_to_json(sheet);
-        fs.unlinkSync(req.file.path);
-      }
-    } else {
-      updates = Array.isArray(req.body) ? req.body : [req.body]; // Cho phép nhập 1 hoặc nhiều
-    }
-
+    console.log("Received body:", req.body);
+    console.log("Received files:", req.files);
+    const image = req.files?.path;
+   
+    updates = Array.isArray(req.body) ? req.body : [req.body];
+    console.log("Received updates:", updates);
     if (!Array.isArray(updates) || updates.length === 0) {
       return res.status(400).json({ status: false, message: "Dữ liệu không hợp lệ" });
     }
@@ -63,7 +43,6 @@ export const addIngredient = async (req, res, next) => {
       const unitPrice = item.unitPrice;
       const category = item.category;
       const stock = item.stock;
-      const imageUrl = req.file?.path || item.imageUrl || ""; // Ưu tiên file ảnh nếu có
 
       if (!name || !unit || !unitPrice || !category || !stock) continue;
 
@@ -76,7 +55,8 @@ export const addIngredient = async (req, res, next) => {
         unitPrice: Number(unitPrice),
         stock: Number(stock),
         category,
-        imageUrl      });
+        imageUrl: image?.path || item.imageUrl || "",
+      });
 
       await ingredient.save();
       inserted.push(ingredient);
@@ -217,53 +197,27 @@ export const searchIngredient = async (req, res) => {
 
 export const updateStockUnified = async (req, res) => {
   try {
-    let updates = [];
+    const data = req.body;
+    console.log("Received data:", data);
 
-    // Nếu có file
-    if (req.file) {
-      const ext = req.file.originalname.split('.').pop().toLowerCase();
-
-      if (ext === 'csv') {
-        const rows = [];
-        fs.createReadStream(req.file.path)
-          .pipe(csv())
-          .on('data', (row) => rows.push(row))
-          .on('end', async () => {
-            fs.unlinkSync(req.file.path);
-            await handleStockImport(rows, res); // Gọi xử lý
-          });
-        return;
-      } else if (ext === 'xlsx') {
-        const workbook = xlsx.readFile(req.file.path);
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        updates = xlsx.utils.sheet_to_json(sheet);
-        fs.unlinkSync(req.file.path);
-      }
-    } else {
-      updates = req.body;
-    }
-    if (!Array.isArray(updates) || updates.length === 0) {
-      return res.status(400).json({ status: false, message: "Dữ liệu không hợp lệ" });
+    // Kiểm tra xem data có phải mảng không
+    if (!Array.isArray(data)) {
+      return res.status(400).json({ status: false, message: "Dữ liệu phải là mảng JSON" });
     }
 
-    await handleStockImport(updates, res);
-  } catch (err) {
-    console.error('Lỗi xử lý:', err);
-    res.status(500).json({ message: 'Lỗi server', error: err.message });
-  }
-};
-
-async function handleStockImport(data, res) {
-  try {
     const updatedIngredients = [];
-    for (const item of data) {
-      const name = item.name?.trim();
-      const quantity = item.quantity;
-      if (!name || isNaN(quantity)) continue;
 
-      const ingredient = await IngredientModel.findOne({ name });
+    for (const item of data) {
+      const ingredientId = item.ingredientId;
+      const quantity = Number(item.quantity);
+
+      if (!ingredientId || isNaN(quantity)) continue;
+
+      const ingredient = await IngredientModel.findById(ingredientId);
       if (!ingredient) continue;
+
       const newStock = (ingredient.stock || 0) + quantity;
+
       await IngredientModel.updateOne(
         { _id: ingredient._id },
         { $set: { stock: newStock } }
@@ -280,6 +234,6 @@ async function handleStockImport(data, res) {
     });
   } catch (err) {
     console.error("Lỗi nhập kho:", err);
-    return res.status(500).json({ message: 'Lỗi khi nhập kho', error: err.message });
+    return res.status(500).json({ message: "Lỗi khi nhập kho", error: err.message });
   }
-}
+};

@@ -17,7 +17,7 @@ export const orderIngredients = async (req, res) => {
     }
 
     for (const item of orders) {
-      const ingredient = await Ingredient.findById(item.ingredientId);
+      const ingredient = await IngredientModel.findById(item.ingredientId);
 
       if (!ingredient) {
         return res.status(404).json({ message: `Không tìm thấy nguyên liệu: ${item.ingredientId}` });
@@ -179,11 +179,15 @@ export const payment = async (req, res) => {
   }
 };
 
+// Lấy thông tin đơn hàng theo ID
 export const getOrderById = async(req, res, next) =>{
   try{
-    const order = await IngredientOrder.findById(req.params.id);
-      if (!order) return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
-      res.json(order);
+    const order = await IngredientOrder.findById(req.params.id)
+    .populate('userId') 
+    .populate('items.ingredient', 'name unit');
+
+    if (!order) return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+    res.json(order);
   }
   catch(error){
     res.status(500).json({error:error});
