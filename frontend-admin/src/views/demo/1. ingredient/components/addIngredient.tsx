@@ -150,7 +150,7 @@ const IngredientForm: React.FC = () => {
         title="Thêm nguyên liệu từ Excel"
         onCancel={() => setExcelModalVisible(false)}
         onOk={handleExcelSubmit}
-        okText="Thêm vào DB"
+        okText="Thêm nguyên liệu"
         width={800}
       >
         <Upload

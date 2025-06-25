@@ -163,12 +163,12 @@ const PostManagement: React.FC = () => {
         <Avatar shape="square" size={64} src={image} />
       ),
     },
-    // {
-    //   title: "Recipe",
-    //   dataIndex: "recipeId",
-    //   key: "recipeId",
-    //   render: (recipe: any) => recipe?.title || recipe?._id || "Không liên kết",
-    // },
+      {
+      title: 'Ngày tạo',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      render: (value:any) => new Date(value).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })
+    },
     {
       title: "Lượt like",
       dataIndex: "likes",

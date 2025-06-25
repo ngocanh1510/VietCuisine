@@ -23,39 +23,32 @@ export const createPost = async (req, res) => {
 // Lấy tất cả bài viết
 export const getAllPosts = async (req, res) => {
   try {
-    // Lấy tất cả bài viết, kèm user và recipe
-    const posts = await Post.find()
-      .populate('userId')
-      .populate('recipeId')
-      .sort({ createdAt: -1 });
+    const { startDate, endDate } = req.query;
+    const query = {};
 
-    // Lấy tất cả bình luận dạng { postId -> [comments] }
-    const postIds = posts.map(post => post._id);
-    const comments = await Comment.find({
-      targetId: { $in: postIds },
-      onModel: 'posts'
-    }).populate('userId');
-
-    // Gom comment theo từng post
-    const commentMap = {};
-    comments.forEach(comment => {
-      const key = comment.targetId.toString();
-      if (!commentMap[key]) commentMap[key] = [];
-      commentMap[key].push(comment);
-    });
-
-    // Gộp comment vào từng post tương ứng
-    const fullPosts = posts.map(post => {
-      return {
-        ...post.toObject(),
-        comments: commentMap[post._id.toString()] || [],
+    // Lọc theo ngày tạo
+    if (startDate && endDate) {
+      query.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
       };
-    });
+    }
 
-    res.status(200).json(fullPosts);
+    const posts = await Post.find(query)
+      .populate("userId")
+      .populate("recipeId")
+      .lean();
+
+    // Đếm bình luận theo từng post
+    for (const post of posts) {
+      const comments = await Comment.find({ targetId: post._id, onModel: "posts" }).lean();
+      post.comments = comments;
+    }
+
+    res.status(200).json(posts);
   } catch (error) {
     console.error("Lỗi khi lấy danh sách bài viết:", error);
-    res.status(500).json({ message: "Lỗi server khi lấy bài viết", error });
+    res.status(500).json({ message: "Lỗi server khi lấy danh sách bài viết", error });
   }
 };
 
