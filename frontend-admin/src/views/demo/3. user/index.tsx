@@ -116,7 +116,7 @@ const columns: ColumnsType<any> = [
     render: (record:any) => record.user?.status || record.status || '---',
   },
   {
-    title: "Action",
+    title: " ",
     key: "action",
     align: 'center' as const,
     render: (_: any, record: any) => (

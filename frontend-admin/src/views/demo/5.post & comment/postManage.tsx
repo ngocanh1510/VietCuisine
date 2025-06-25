@@ -62,7 +62,23 @@ const PostManagement: React.FC = () => {
 
   useEffect(() => {
     fetchPosts();
-  }, [dateRange, searchText]);
+  }, [dateRange]);
+
+  const showDeletePostConfirm = (id: string) => {
+    Modal.confirm({
+      title: `Bạn có chắc chắn muốn xóa post không?`,
+      content: "Hành động này không thể phục hồi",
+      okText: "Yes",
+      okType: "danger",
+      cancelText: "No",
+      onOk() {
+        handleDeletePost(id);
+      },
+      onCancel() {
+        console.log("Cancelled delete");
+      },
+    });
+  };
 
   const handleDeletePost = async (id: string) => {
     try {
@@ -79,9 +95,25 @@ const PostManagement: React.FC = () => {
     }
   };
 
+  const showDeleteCommentConfirm = (id: string) => {
+    Modal.confirm({
+      title: `Bạn có chắc chắn muốn xóa comment không?`,
+      content: "Hành động này không thể phục hồi",
+      okText: "Yes",
+      okType: "danger",
+      cancelText: "No",
+      onOk() {
+        handleDeleteComment(id);
+      },
+      onCancel() {
+        console.log("Cancelled delete");
+      },
+    });
+  };
+
   const handleDeleteComment = async (commentId: string) => {
     try {
-      await axios.delete(`http://localhost:3001/comments/${commentId}`, {
+      await axios.delete(`http://localhost:3001/comment/${commentId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
       });
       message.success("Đã xoá bình luận");
@@ -164,12 +196,12 @@ const PostManagement: React.FC = () => {
       ),
     },
     {
-      title: "Action",
+      title: "",
       key: "action",
       render: (_: any, record: any) => (
         <Space size="middle">
           <Button icon={<EyeOutlined />} onClick={() => viewDetail(record)} />
-          <Button danger icon={<DeleteOutlined />} onClick={() => handleDeletePost(record._id)} />
+          <Button danger icon={<DeleteOutlined />} onClick={() => showDeletePostConfirm(record._id)} />
         </Space>
       ),
     },
@@ -180,11 +212,6 @@ const PostManagement: React.FC = () => {
       <h2>Quản lý bài viết</h2>
       <Space style={{ marginBottom: 16 }}>
         <RangePicker onChange={(values) => setDateRange(values || [])} />
-        <Search
-          placeholder="Tìm kiếm tiêu đề..."
-          onSearch={(value) => setSearchText(value)}
-          allowClear
-        />
       </Space>
 
       <Table
@@ -201,11 +228,11 @@ const PostManagement: React.FC = () => {
         title={
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span>Chi tiết bài viết</span>
-            <DeleteOutlined
+            {/* <DeleteOutlined
               onClick={() => handleDeletePost(selectedPost?._id)}
               style={{ color: "red", cursor: "pointer" }}
               title="Xoá bài viết"
-            />
+            /> */}
           </div>
         }
         onCancel={() => setIsModalVisible(false)}
@@ -223,16 +250,15 @@ const PostManagement: React.FC = () => {
                 </div>
               </div>
             </div>
-
+            
+            <Title level={4} style={{ marginTop: 16 }}>{selectedPost.caption}</Title>
             {selectedPost.image && (
               <img
                 src={selectedPost.image}
                 alt="post"
-                style={{ width: "100%", maxHeight: 500, objectFit: "cover", borderRadius: 8 }}
+                style={{ width: "90%", maxHeight: 500, objectFit: "cover", borderRadius: 8 }}
               />
             )}
-
-            <Title level={4} style={{ marginTop: 16 }}>{selectedPost.caption}</Title>
 
             {selectedPost.recipeId && (
               <Paragraph><strong>Công thức:</strong> {selectedPost.recipeId.title}</Paragraph>
@@ -261,7 +287,7 @@ const PostManagement: React.FC = () => {
                     trigger={['click']}
                     overlay={
                       <Menu>
-                        <Menu.Item icon={<DeleteOutlined />} onClick={() => handleDeleteComment(item._id)}>
+                        <Menu.Item icon={<DeleteOutlined />} onClick={() => showDeleteCommentConfirm(item._id)}>
                           Xoá bình luận
                         </Menu.Item>
                       </Menu>

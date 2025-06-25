@@ -43,7 +43,7 @@ const Dashboard: React.FC = () => {
     data: lineData,
     xField: 'month',
     yField: 'value',
-    point: { shapeField: 'square', sizeField: 4 },
+    point: { shapeField: 'circle', sizeField: 4 },
     style: { lineWidth: 3 },
   };
 
@@ -51,6 +51,7 @@ const Dashboard: React.FC = () => {
     data: barData,
     xField: 'name',
     yField: 'totalSold',
+    barWidthRatio: 0.1,
     label: {
       position: 'middle',
       style: { fill: '#FFFFFF', opacity: 0.8 },
@@ -87,12 +88,16 @@ const Dashboard: React.FC = () => {
       <Row gutter={[16, 16]}>
         <Col span={12}>
           <Card title="Doanh thu theo tháng">
-            <Line {...lineConfig} />
+            <div style={{ height: 300 }}>
+              <Line {...lineConfig} />
+            </div>
           </Card>
         </Col>
         <Col span={12}>
           <Card title="Top nguyên liệu bán chạy">
-            <Bar {...barConfig} />
+            <div style={{ height: 300 }}>
+              <Bar {...barConfig} />
+            </div>
           </Card>
         </Col>
       </Row>
