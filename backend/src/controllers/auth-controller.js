@@ -254,21 +254,14 @@ export const resetPassword = async (req, res) => {
 export const updateProfile = async (req, res) => {
     try {
         
-        const accountId = req.user.id; // ID từ JWT
+        const userId = req.user.id; // ID từ JWT
         const { name, email } = req.body;
-
-        const account = await Account.findById(accountId).populate('user');
-        if (!account) {
-            return res.status(404).json({ message: 'Không tìm thấy tài khoản' });
-        }
+        const avatar = req.file?.path; // Lấy avatar từ file nếu có
 
         const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         if (email && !emailRegex.test(email)) {
             return res.status(400).json({ message: 'Email không hợp lệ' });
         }
-
-
-        const userId = account.user;
 
         const existingUser = await User.findById(userId);
 
@@ -281,7 +274,7 @@ export const updateProfile = async (req, res) => {
             }
 
             // Cập nhật username trong Account
-            // 
+            const account = await Account.findOne({ user: userId });
             account.username = email;
             await account.save();
         }
@@ -293,6 +286,7 @@ export const updateProfile = async (req, res) => {
         const updatedFields = {};
         if (name) updatedFields.name = name;
         if (email) updatedFields.email = email;
+        if(avatar) updatedFields.avatar = avatar; // Cập nhật avatar nếu có
 
 
         const updatedUser= await User.findByIdAndUpdate(

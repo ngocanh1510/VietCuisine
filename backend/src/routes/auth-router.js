@@ -2,6 +2,7 @@ import express from 'express'
 import { register, login, logout, getProfile, forgotPassword, verifyOTP, resetPassword, updateProfile } from "../controllers/auth-controller.js";
 import authMiddleware from '../middlewares/auth-middlewares.js';
 import loginLimiter from '../middlewares/rate-limit-middleware.js';
+import upload from '../middlewares/uploadMiddelware.js';
 
 const AccountRouter = express.Router();
 
@@ -12,6 +13,6 @@ AccountRouter.post('/logout',authMiddleware, logout);
 AccountRouter.post('/forgot-password', forgotPassword);
 AccountRouter.post('/verify-otp', verifyOTP );
 AccountRouter.post('/reset-password', resetPassword);
-AccountRouter.put('/update-profile', authMiddleware, updateProfile);
+AccountRouter.put('/update-profile',upload.single('avatar'), authMiddleware, updateProfile);
 
 export default AccountRouter;

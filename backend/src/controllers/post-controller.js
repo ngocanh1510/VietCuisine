@@ -39,6 +39,7 @@ export const getAllPosts = async (req, res) => {
     const posts = await Post.find(query)
       .populate("userId")
       .populate("recipeId")
+      .sort({ createdAt: -1 })
       .lean();
 
     // Đếm bình luận theo từng post
