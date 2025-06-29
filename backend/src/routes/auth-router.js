@@ -6,7 +6,7 @@ import loginLimiter from '../middlewares/rate-limit-middleware.js';
 const AccountRouter = express.Router();
 
 AccountRouter.post('/register', register); // Đăng ký tài khoản
-AccountRouter.post('/login', loginLimiter, login); // // Route đăng nhập (áp dụng giới hạn đăng nhập)
+AccountRouter.post('/login', login); // // Route đăng nhập (áp dụng giới hạn đăng nhập)
 AccountRouter.get('/profile', authMiddleware, getProfile)
 AccountRouter.post('/logout',authMiddleware, logout);
 AccountRouter.post('/forgot-password', forgotPassword);

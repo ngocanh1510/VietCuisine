@@ -13,9 +13,9 @@ import {
 const router = express.Router();
 
 router.post('/',authMiddleware,upload.single('image'), createPost);
-router.get('/', getAllPosts);
+router.get('/',authMiddleware, getAllPosts);
 router.get('/my', authMiddleware, getMyPosts);
-router.get('/:id', getPostById);
+router.get('/:id',authMiddleware, getPostById);
 router.put('/:id', authMiddleware,upload.single('image'),updatePost);
 router.delete('/:id',authMiddleware, deletePost);
 export default router;

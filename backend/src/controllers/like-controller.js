@@ -27,12 +27,12 @@ export const toggleLike = async (req, res) => {
       return res.status(200).json({ liked: false, message: 'Đã bỏ like.' });
     } else {
       // Nếu chưa like → thêm like
-      await Like.create({ userId, targetId, onModel });
-
+        await Like.create({ userId, targetId, onModel });
+      console.log("Đã tạo like mới", userId, targetId, onModel);
       if (onModel === 'posts') {
-        await Post.findByIdAndUpdate(targetId, { $inc: { likesCount: 1 } });
-      } else await Reel.findByIdAndUpdate(targetId, { $inc: { likesCount: 1 } });
-
+        await Post.findByIdAndUpdate({ _id: targetId }, { $inc: { likesCount: 1 } });
+      } else await Reel.findByIdAndUpdate({ _id: targetId }, { $inc: { likesCount: 1 } });
+      console.log("Đã like thành công", targetId, onModel);
       return res.status(201).json({ liked: true, message: 'Đã like.' });
     }
   } catch (error) {

@@ -1,19 +1,35 @@
+import Like from "../models/Like.js";
 import ReelModel from "../models/Reel.js";
 import mongoose from "mongoose";
 
-export const getAllReel = async(req,res,next) =>{
-    let reels;
-    try {
-        reels = await ReelModel.find().sort({ createdAt: -1 });
-    } catch (err) {
-        return console.log(err);
-    }
+export const getAllReel = async (req, res, next) => {
+  try {
+    const userId = req.user?.id; 
+
+    let reels = await ReelModel.find().sort({ createdAt: -1 }).lean();
 
     if (!reels) {
-        return res.status(500).json({ message: "Request Failed" });
+      return res.status(500).json({ message: "Request Failed" });
     }
+
+    // Gắn thuộc tính liked vào từng reel
+    for (let reel of reels) {
+      const liked = await Like.exists({
+        userId,
+        targetId: reel._id,
+        onModel: 'reels'
+      });
+      reel.isLiked = !!liked;
+    }
+
     return res.status(200).json({ reels });
+
+  } catch (err) {
+    console.error("Error in getAllReel:", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 };
+
 
 export const addReel = async (req, res, next) => {
   try {

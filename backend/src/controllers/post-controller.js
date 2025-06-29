@@ -1,4 +1,5 @@
 import Comment from '../models/Comment.js';
+import Like from '../models/Like.js';
 import Post from '../models/Post.js';
 
 // Tạo bài viết
@@ -24,6 +25,7 @@ export const createPost = async (req, res) => {
 export const getAllPosts = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
+    const userId = req.user?.id; // Lấy userId từ token đã xác thực
     const query = {};
 
     // Lọc theo ngày tạo
@@ -36,12 +38,24 @@ export const getAllPosts = async (req, res) => {
 
     const posts = await Post.find(query)
       .populate("userId")
-      .populate("recipeId");
+      .populate("recipeId")
+      .lean();
 
     // Đếm bình luận theo từng post
     for (const post of posts) {
       const comments = await Comment.find({ targetId: post._id, onModel: "posts" });
       post.comments = comments;
+    }
+    // Sau khi get danh sách bài viết
+    for (let post of posts) {
+      const liked = await Like.exists({
+        userId,
+        targetId: post._id,
+        onModel: 'posts'
+      });
+      console.log(userId, post._id);
+      console.log("Liked status for post:", post._id, "is", liked);
+      post.isLiked = !!liked;
     }
 
     res.status(200).json(posts);
