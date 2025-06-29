@@ -4,6 +4,7 @@ import Reel from '../models/Reel.js';
 
 export const toggleLike = async (req, res) => {
   try {
+    console.log("Đã vào hàm toggleLike", req.body);
     const { targetId, onModel } = req.body;
     const userId = req.user.id;
 

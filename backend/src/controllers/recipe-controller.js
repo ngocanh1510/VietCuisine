@@ -8,22 +8,70 @@ import sendNotification from "../utils/sendNotification.js";
 import NotificationModel from "../models/Notification.js";
 import RecipeIngredient from "../models/RecipeIngredient.js";
 import IngredientModel from "../models/Ingredient.js";
+import redisClient from "../redisClient.js";
 
 export const getAllRecipes = async (req, res, next) => {
   let recipes;
 
   try {
-    recipes = await RecipeModel.find();
+    const cacheKey = 'all_recipes';
+
+    // Kiểm tra trong Redis trước
+    const cached = await redisClient.get(cacheKey);
+    if (cached) {
+      console.log('Trả từ cache');
+      return res.status(200).json({ recipes: JSON.parse(cached) });
+    }
+
+    const recipes = await RecipeModel.find();
+    await redisClient.setEx(cacheKey, 600, JSON.stringify(recipes)); // TTL 10 phút
+    console.log('Trả từ DB và cache vào Redis');
+      
+    if (!recipes) {
+      return res.status(500).json({ message: "Request Failed" });
+    }
+    return res.status(200).json({ recipes });
   } catch (err) {
     return console.log(err);
   }
-
-  if (!recipes) {
-    return res.status(500).json({ message: "Request Failed" });
-  }
-  return res.status(200).json({ recipes });
 };
 
+export const getRecipeById = async (req, res) => {
+  try {
+    const recipeId = req.params.id;
+    const cacheKey = `recipe:${recipeId}`;
+
+    const cached = await redisClient.get(cacheKey);
+    if (cached) {
+        console.log('Chi tiết trả từ cache');
+        return res.json({ 
+          status: true,
+          message: "Recipe fetched successfully",
+          recipe: JSON.parse(cached)
+        });
+    }
+    if (!mongoose.Types.ObjectId.isValid(recipeId)) {
+      return res.status(400).json({ status: false, message: "Invalid Recipe ID" });
+    }
+    const recipe = await RecipeModel.findById(recipeId)
+      .populate("userOwner", "username avatar")
+      // .populate("categoriesId", "name");
+    if (!recipe) {
+      return res.status(404).json({ status: false, message: "Recipe not found" });
+    }
+    await redisClient.setEx(cacheKey, 600, JSON.stringify(recipe));
+    console.log('Trả từ DB và cache vào Redis');
+    return res.status(200).json({
+      status: true,
+      message: "Recipe fetched successfully",
+      recipe,
+    });
+  
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: false, message: "Server error", error: error.message });
+  }
+}
 export const getRecipesByCategory = async (req, res) =>  {
     try {
       const { categoryId } = req.params;
@@ -229,6 +277,8 @@ export const editRecipe = async (req, res) => {
     if (imageUrl) updateFields.image = imageUrl;
 
     const updatedRecipe = await RecipeModel.findByIdAndUpdate(id, updateFields, { new: true });
+    await redisClient.del(`recipe:${id}`);
+    await redisClient.del('all_recipes');
 
     return res.status(200).json({
       status: true,
@@ -276,6 +326,8 @@ export const deleteRecipe = async (req, res) => {
 
     // Xóa món ăn
     await RecipeModel.findByIdAndDelete(id);
+    await redisClient.del(`recipe:${id}`);
+    await redisClient.del('all_recipes');
 
     return res.status(200).json({
       status: true,

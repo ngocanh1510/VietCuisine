@@ -36,12 +36,11 @@ export const getAllPosts = async (req, res) => {
 
     const posts = await Post.find(query)
       .populate("userId")
-      .populate("recipeId")
-      .lean();
+      .populate("recipeId");
 
     // Đếm bình luận theo từng post
     for (const post of posts) {
-      const comments = await Comment.find({ targetId: post._id, onModel: "posts" }).lean();
+      const comments = await Comment.find({ targetId: post._id, onModel: "posts" });
       post.comments = comments;
     }
 

@@ -20,6 +20,7 @@ export const addReel = async (req, res, next) => {
     const userId = req.user?.id;
     const video = req.file?.path;
     const caption = String(req.body.caption || "");
+    console.log("đã vào hàm thêm reel", userId, video, caption);
 
     if (!userId || !video || caption.trim() === "") {
       return res.status(422).json({ message: "Invalid input" });
