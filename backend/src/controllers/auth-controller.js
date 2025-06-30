@@ -112,19 +112,19 @@ export const login = async (req, res) => {
 // Lấy thông tin hồ sơ người dùng
 export const getProfile = async (req, res) => {
     try {
-        const accountId = req.user.id; // ID từ JWT
+        const userId = req.user.id; // ID từ JWT
 
-        const account = await Account.findById(accountId).populate('user');
-        if (!account) {
+        const user = await User.findById(userId);
+        if (!user) {
             return res.status(404).json({ message: 'Không tìm thấy tài khoản' });
         }
 
         const userProfile = {
-            name: account.user.name,
-            email: account.user.email,
-            gender: account.user.gender,
-            phone: account.user.phone,
-            avatar: account.user.avatar,
+            name: user.name,
+            email: user.email,
+            gender: user.gender,
+            phone: user.phone,
+            avatar: user.avatar,
         };
 
         res.json(userProfile);
@@ -255,7 +255,7 @@ export const updateProfile = async (req, res) => {
     try {
         
         const userId = req.user.id; // ID từ JWT
-        const { name, email } = req.body;
+        const { name, email, gender, phone } = req.body;
         const avatar = req.file?.path; // Lấy avatar từ file nếu có
 
         const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -287,7 +287,8 @@ export const updateProfile = async (req, res) => {
         if (name) updatedFields.name = name;
         if (email) updatedFields.email = email;
         if(avatar) updatedFields.avatar = avatar; // Cập nhật avatar nếu có
-
+        if (email) updatedFields.phone = phone;
+        if (email) updatedFields.gender = gender;
 
         const updatedUser= await User.findByIdAndUpdate(
             userId,
