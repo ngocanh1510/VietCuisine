@@ -4,22 +4,38 @@ import Reel from '../models/Reel.js';
 
 export const createComment = async (req, res) => {
   try {
-    const { targetId, onModel, content } = req.body;
-    const userId = req.user.id; // từ middleware xác thực
+    const { targetId, onModel, content, parentId } = req.body;
+    console.log("Creating comment with data:", { targetId, onModel, content, parentId });
+    const userId = req.user.id;
 
     if (!['posts', 'reels'].includes(onModel)) {
       return res.status(400).json({ message: 'Loại nội dung không hợp lệ.' });
     }
-    const comment = new Comment({ targetId, onModel,userId, content });
+
+    const comment = new Comment({
+      targetId,
+      onModel,
+      userId,
+      content,
+      parentId: parentId || null
+    });
+    console.log("Comment to be saved:", comment);
+
     await comment.save();
 
-    // Tăng số lượng comment trong bài viết
-    if (onModel === 'posts'){
-      await Post.findByIdAndUpdate(targetId, { $inc: { commentsCount: 1 } });
-    } 
-    else await Reel.findByIdAndUpdate(targetId, { $inc: { commentsCount: 1 } });
+    const updateQuery = { $inc: { commentsCount: 1 } };
+    if (onModel === 'posts') {
+      await Post.findByIdAndUpdate(targetId, updateQuery);
+    } else {
+      await Reel.findByIdAndUpdate(targetId, updateQuery);
+    }
 
-    res.status(201).json(comment);
+    res.status(201).json({
+      status: true,
+      message: "Comment created",
+      data: comment
+    });
+
   } catch (error) {
     res.status(500).json({ message: 'Không thể tạo bình luận.', error });
   }
@@ -28,18 +44,31 @@ export const createComment = async (req, res) => {
 export const getCommentsByTarget = async (req, res) => {
   try {
     const { targetId, onModel } = req.query;
-    if (!['posts', 'reels'].includes(onModel)) {
-      return res.status(400).json({ message: 'Loại nội dung không hợp lệ.' });
-    }
-    const comments = await Comment.find({ targetId, onModel })
-      .populate('userId', 'name avatar') // lấy thêm info người bình luận
-      .sort({ createAt: -1 });
 
-    res.status(200).json(comments);
+    // Lấy toàn bộ comment
+    const comments = await Comment.find({ targetId, onModel })
+      .populate('userId')
+      .sort({ createdAt: -1 });
+
+    const roots = comments.filter(c => !c.parentId);
+    const replies = comments.filter(c => c.parentId);
+
+    const commentTree = roots.map(root => {
+      const rootObj = root.toObject();
+      rootObj.replies = replies
+        .filter(r => r.parentId?.toString() === root._id.toString())
+        .map(r => r.toObject());
+      return rootObj;
+    });
+
+    res.status(200).json(commentTree);
   } catch (error) {
-    res.status(500).json({ message: 'Không thể lấy danh sách bình luận.', error });
+    console.error("Error fetching comments:", error);
+    res.status(500).json({ message: 'Không thể lấy bình luận.', error });
   }
 };
+
+
 
 export const deleteComment = async (req, res) => {
   try {

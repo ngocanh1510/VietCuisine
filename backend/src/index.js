@@ -21,6 +21,7 @@ import LikeRouter from "./routes/like-router.js";
 import CartRouter from "./routes/cart-router.js";
 import webhookRouter from "./routes/webhook-router.js";
 import DashboardRouter from "./routes/dashboard-router.js";
+import ReportRouter from "./routes/report-router.js";
 dotenv.config();
 
 const app = express();
@@ -65,6 +66,7 @@ app.use("/order", OrderRouter);
 app.use("/cart",CartRouter);
 app.use("/admin", AdminRouter);
 app.use("/dashboard",DashboardRouter)
+app.use("/report", ReportRouter);
 // Socket.IO logic
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
