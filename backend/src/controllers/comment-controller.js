@@ -48,7 +48,7 @@ export const getCommentsByTarget = async (req, res) => {
     // Lấy toàn bộ comment
     const comments = await Comment.find({ targetId, onModel })
       .populate('userId')
-      .sort({ createdAt: -1 });
+      .sort({ createAt: -1 });
 
     const roots = comments.filter(c => !c.parentId);
     const replies = comments.filter(c => c.parentId);
@@ -57,9 +57,11 @@ export const getCommentsByTarget = async (req, res) => {
       const rootObj = root.toObject();
       rootObj.replies = replies
         .filter(r => r.parentId?.toString() === root._id.toString())
+        .sort((a, b) => new Date(b.createAt) - new Date(a.createAt))
         .map(r => r.toObject());
       return rootObj;
     });
+
 
     res.status(200).json(commentTree);
   } catch (error) {

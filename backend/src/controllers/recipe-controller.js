@@ -125,20 +125,27 @@ export const getRecipesInHomepage = async (req, res, next) => {
 export const addRecipe = async (req, res) => {
   const {
     title,
-    time,
+    cookingTime,
     carbs,
     protein,
     calories,
     fat,
     description,
-    category,
+    categoriesId,
     ingredients, // [{ name: "Tôm", quantity: "100g" }]
     steps,
   } = req.body;
+
   const imageUrl = req.file?.path;
   const userId = req.user?.id;
 
-  console.log(req.body);
+  // Chuyển đổi các trường số
+  const cookingTimeNum = Number(cookingTime);
+  const carbsNum = Number(carbs);
+  const proteinNum = Number(protein);
+  const caloriesNum = Number(calories);
+  const fatNum = Number(fat);
+
   // Validate
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).json({ status: false, message: "Invalid Account ID" });
@@ -146,44 +153,37 @@ export const addRecipe = async (req, res) => {
 
   if (
     !title || title.trim() === "" ||
-    !time || !carbs || !protein || !calories || !fat ||
-    !description || description.trim() === "" 
-    || !Array.isArray(ingredients) || ingredients.length === 0 
+    isNaN(cookingTimeNum) || isNaN(carbsNum) || isNaN(proteinNum) || isNaN(caloriesNum) || isNaN(fatNum) ||
+    !description || description.trim() === ""
+    // || !Array.isArray(ingredients) || ingredients.length === 0
     // || !Array.isArray(steps) || steps.length === 0
   ) {
     return res.status(422).json({ message: "Invalid input" });
   }
 
   try {
-    // Tìm danh mục
-    const categoryDoc = await CategoryModel.findOne({ name: category.trim() });
-    if (!categoryDoc) {
-      return res.status(400).json({ error: "Category not found" });
-    }
-
-    // Tạo công thức trước
+    // Tạo công thức
     const newRecipe = new RecipeModel({
       userOwner: userId,
       title,
-      time,
-      carbs,
-      protein,
-      calories,
-      fat,
+      time: cookingTimeNum,
+      carbs: carbsNum,
+      protein: proteinNum,
+      calories: caloriesNum,
+      fat: fatNum,
       description,
-      categoriesId: categoryDoc._id,
+      categoriesId,
       steps,
-      image:imageUrl
+      image: imageUrl
     });
     await newRecipe.save();
 
-    // Tạo từng dòng RecipeIngredients
+    // Lưu từng nguyên liệu
     for (const item of ingredients) {
-      const ingredientDoc = await IngredientModel.findOne({ name: item.name.trim() });
-      if (!ingredientDoc) 
-        return res.status(500).json({ message: "ingedient not found", error: err.message });; // bỏ qua nếu không tìm thấy nguyên liệu
+      const ingredientDoc = await IngredientModel.findOne({ name: item.ingredient.trim() });
+      if (!ingredientDoc)
+        return res.status(500).json({ message: `Nguyên liệu '${item.ingredient}' không tìm thấy` });
 
-  
       await RecipeIngredient.create({
         recipeId: newRecipe._id,
         ingredientId: ingredientDoc._id,
@@ -197,6 +197,7 @@ export const addRecipe = async (req, res) => {
     return res.status(500).json({ message: "Failed to add recipe", error: err.message });
   }
 };
+
 
 // Lấy danh dách công thức của tôi
 export const getCreateRecipes = async (req, res) => {
