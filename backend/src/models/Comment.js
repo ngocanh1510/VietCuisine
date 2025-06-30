@@ -2,17 +2,15 @@ import mongoose from 'mongoose';
 
 const CommentSchema = new mongoose.Schema({
   targetId: {
-      type: mongoose.Schema.Types.ObjectId,
-      required: true,
-      refPath: 'onModel'  // dùng cho liên kết động nếu cần
-    },
-
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    refPath: 'onModel'
+  },
   onModel: {
     type: String,
     required: true,
-    enum: ['posts','reels'] // có thể mở rộng nếu cần
+    enum: ['posts', 'reels']
   },
-
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'users',
@@ -21,6 +19,11 @@ const CommentSchema = new mongoose.Schema({
   content: {
     type: String,
     required: true
+  },
+  parentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'comments',
+    default: null // nếu null thì là comment gốc
   }
 }, {
   timestamps: { createdAt: 'createAt', updatedAt: 'updateAt' }
