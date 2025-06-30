@@ -54,8 +54,7 @@ export const getRecipeById = async (req, res) => {
       return res.status(400).json({ status: false, message: "Invalid Recipe ID" });
     }
     const recipe = await RecipeModel.findById(recipeId)
-      .populate("userOwner", "username avatar")
-      // .populate("categoriesId", "name");
+      
     if (!recipe) {
       return res.status(404).json({ status: false, message: "Recipe not found" });
     }
