@@ -155,7 +155,10 @@ export const getMyPosts = async (req, res) => {
   try {
     const userId = req.user.id; 
 
-    const posts = await Post.find({ userId }).sort({ createdAt: -1 });
+    const posts = await Post.find({ userId })
+                            .populate('userId', '_id username avatar') 
+                            .populate('recipeId', '_id title image')
+                            .sort({ createdAt: -1 });
 
     res.status(200).json(posts);
   } catch (error) {
