@@ -695,7 +695,10 @@ export const markNotificationAsRead = async (req, res) => {
       unit: item.ingredientId?.unit,
       unitPrice: item.ingredientId?.unitPrice,
       imageUrl: item.ingredientId?.imageUrl,
-      quantity: item.quantity
+      quantity: item.quantity,
+      ingredientId: item.ingredientId?._id,
+      recipeId: item.recipeId,
+      _id: item._id
     }));
 
     res.json(result);

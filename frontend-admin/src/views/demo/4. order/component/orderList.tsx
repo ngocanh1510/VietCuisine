@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Tag, Space, message, Button } from 'antd';
+import { Table, Tag, Space, message, Button, Select } from 'antd';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -29,6 +29,21 @@ const OrderList = () => {
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  const handleUpdateStatus = async (orderId: string, status: string) => {
+    try {
+      await axios.patch(`http://localhost:3001/order/updateStatus/${orderId}`, 
+        { status }, 
+        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+      );
+      message.success("Cập nhật trạng thái thành công");
+      fetchOrders(); // làm mới lại danh sách
+    } catch (err) {
+      console.error("Update status error", err);
+      message.error("Không thể cập nhật trạng thái");
+    }
+  };
+
 
   const columns = [
     {
@@ -79,14 +94,17 @@ const OrderList = () => {
       title: 'Trạng thái giao hàng',
       dataIndex: 'deliveryStatus',
       key: 'deliveryStatus',
-      render: (status: string) => {
-        let color = status === 'delivered'
-          ? 'green'
-          : status === 'processing'
-          ? 'orange'
-          : 'red';
-        return <Tag color={color}>{status}</Tag>;
-      },
+      render: (status: string, record: any) => (
+        <Select
+          value={status}
+          style={{ width: 150 }}
+          onChange={(value) => handleUpdateStatus(record._id, value)}
+          options={[
+            { value: 'shipping', label: 'Đang giao' },
+            { value: 'delivered', label: 'Đã giao' },
+          ]}
+        />
+      ),
     },
     {
       title: 'Mặt hàng',
