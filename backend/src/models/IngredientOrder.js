@@ -46,8 +46,8 @@ const IngredientOrderSchema = new mongoose.Schema({
   },
   deliveryStatus: {
     type: String,
-    enum: ['processing', 'shipped', 'delivered', 'cancelled'],
-    default: 'processing'
+    enum: ['shipping', 'delivered', 'cancelled'],
+    default: 'shipping'
   },
   orderedAt: {
     type: Date,

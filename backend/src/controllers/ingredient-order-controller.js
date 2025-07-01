@@ -9,6 +9,10 @@ export const orderIngredients = async (req, res) => {
     const userId = req.user.id; // Lấy userId từ token
     const orderedItems = [];
     let totalCost = 0;
+    console.log("Received orders:", orders);
+    console.log("Received shippingAddress:", shippingAddress);
+    console.log("Received paymentMethod:", paymentMethod);
+    console.log("User ID:", userId);
 
     const detailedItems = []; // dùng để trả về chi tiết
 
@@ -88,13 +92,112 @@ export const getMyOrders = async (req, res) => {
     res.status(500).json({ message: 'Lỗi khi lấy đơn hàng của bạn.', error: error.message });
   }
 };
+// export const getShippingOrders = async (req, res) => {
+//   try {
+//     const userId = req.user.id;
+
+//     // Lấy các đơn hàng đang "shipping"
+//     const orders = await IngredientOrder.find({ 
+//       userId, 
+//       deliveryStatus: 'shipping' 
+//     })
+//     .populate('items.ingredient', 'name unit imageUrl category')  // lấy thông tin nguyên liệu
+//     .sort({ orderedAt: -1 }); // mới nhất trước
+
+//     if (orders.length === 0) {
+//       return res.status(200).json({ message: 'Không có đơn hàng đang giao.', orders: [] });
+//     }
+
+//     // Format kết quả
+//     const result = orders.map(order => {
+//       const items = order.items.map(item => ({
+//         ingredientId: item.ingredient._id,
+//         name: item.ingredient.name,
+//         unit: item.ingredient.unit,
+//         imageUrl: item.ingredient.imageUrl,
+//         category: item.ingredient.category,
+//         quantity: item.quantity,
+//         unitPrice: item.unitPriceAtTime,
+//         subtotal: item.quantity * item.unitPriceAtTime
+//       }));
+
+//       return {
+//         orderId: order._id,
+//         items,
+//         totalCost: order.totalCost,
+//         discount: order.discount,
+//         shippingAddress: order.shippingAddress,
+//         orderedAt: order.orderedAt,
+//         deliveryStatus: order.deliveryStatus
+//       };
+//     });
+
+//     res.status(200).json({ orders: result });
+
+//   } catch (error) {
+//     console.error('Error fetching shipping orders:', error);
+//     res.status(500).json({ message: 'Lỗi khi lấy đơn hàng đang giao.', error: error.message });
+//   }
+// };
+export const getOrdersByStatus = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const status = req.params.status || 'shipping'; 
+    console.log("Fetching orders for user:", userId, "with status:", status);
+
+    // Lấy các đơn hàng đang "delivered"
+    const orders = await IngredientOrder.find({ 
+      userId, 
+      deliveryStatus: status  
+    })
+    .populate('items.ingredient')  // lấy thông tin nguyên liệu
+    .sort({ orderedAt: -1 }); // mới nhất trước
+
+    if (orders.length === 0) {
+      return res.status(200).json({ message: 'Không có đơn hàng đang giao.', orders: [] });
+    }
+
+    // Format kết quả
+    const result = orders.map(order => {
+      const items = order.items.map(item => ({
+        ingredientId: item.ingredient._id,
+        name: item.ingredient.name,
+        unit: item.ingredient.unit,
+        imageUrl: item.ingredient.imageUrl,
+        category: item.ingredient.category,
+        quantity: item.quantity,
+        unitPrice: item.unitPriceAtTime,
+        subtotal: item.quantity * item.unitPriceAtTime,
+        paymentStatus: item.paymentStatus
+      }));
+
+      return {
+        orderId: order._id,
+        items,
+        totalCost: order.totalCost,
+        discount: order.discount,
+        shippingAddress: order.shippingAddress,
+        orderedAt: order.orderedAt,
+        deliveryStatus: order.deliveryStatus,
+        paymentStatus: order.paymentStatus
+      };
+    });
+
+    res.status(200).json({ orders: result });
+
+  } catch (error) {
+    console.error('Error fetching shipping orders:', error);
+    res.status(500).json({ message: 'Lỗi khi lấy đơn hàng đang giao.', error: error.message });
+  }
+};
 
 export const getAllOrders = async (req, res) => {
   try {
 
     const orders = await IngredientOrder.find()
       .populate('userId') 
-      .populate('items.ingredient', 'name unit'); // Lấy thông tin nguyên liệu
+      .populate('items.ingredient', 'name unit')
+      .sort({ orderedAt: -1 }); // Lấy thông tin nguyên liệu
 
     res.status(200).json(orders);
   } catch (error) {
@@ -106,7 +209,9 @@ const stripe = new Stripe ( process.env.STRIPE_SECRET_KEY);
 
 export const payment = async (req, res) => {
   try {
-    const { orderId, couponCode } = req.body;
+    console.log("Received payment request:", req.body);
+    const orderId = req.body.orderId;
+    const couponCode = req.body.couponCode; // Mã giảm giá nếu có
 
     if (!orderId) {
       return res.status(400).json({ error: "Thiếu orderId" });
@@ -163,8 +268,8 @@ export const payment = async (req, res) => {
       mode: 'payment',
       locale: 'vi',
       discounts,
-      success_url: 'http://localhost:3001/success',
-      cancel_url: 'http://localhost:3001/cancel',
+      success_url: `vietcuisine://payment-success?orderId=${orderId}`,
+      cancel_url: `vietcuisine://payment-cancel`,
       metadata: { orderId },
     });
 
@@ -285,3 +390,31 @@ export const orderFromCart = async (req, res) => {
     res.status(500).json({ message: 'Lỗi khi đặt hàng từ giỏ.', error: error.message });
   }
 };
+
+export const updateDeliveryStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const status = req.body.status;
+    console.log("Updating delivery status for order:", id, "to", status);
+  const allowedStatuses = ['shipping', 'delivered', 'cancelled'];
+
+  if (!allowedStatuses.includes(status)) {
+    return res.status(400).json({ message: 'Trạng thái không hợp lệ.' });
+  }
+    const updatedOrder = await IngredientOrder.findByIdAndUpdate(id,
+      { deliveryStatus: status },
+      { new: true }
+    );
+
+    if (!updatedOrder) {
+      return res.status(404).json({ message: 'Không tìm thấy đơn hàng.' });
+    }
+
+    res.json({
+      message: 'Cập nhật trạng thái đơn hàng thành công.',
+      order: updatedOrder
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi server khi cập nhật đơn hàng.', error });
+  }
+}
