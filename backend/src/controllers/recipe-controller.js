@@ -180,9 +180,7 @@ export const addRecipe = async (req, res) => {
     // Lưu từng nguyên liệu
     for (const item of ingredients) {
       const ingredientDoc = await IngredientModel.findOne({ name: item.ingredient.trim() });
-      if (!ingredientDoc)
-        return res.status(500).json({ message: `Nguyên liệu '${item.ingredient}' không tìm thấy` });
-
+  
       await RecipeIngredient.create({
         recipeId: newRecipe._id,
         ingredientId: ingredientDoc._id,
@@ -211,7 +209,7 @@ export const getCreateRecipes = async (req, res) => {
       return res.status(404).json({ status: false, message: "User not found" });
     }
 
-    const userRecipes = await RecipeModel.find({ userOwner: userId }); // Tìm các công thức của người dùng
+    const userRecipes = await RecipeModel.find({ userOwner: userId }).sort({ createdAt: -1 }); // Tìm các công thức của người dùng
     res.status(200).json({ success: true, recipes: userRecipes }); // Đồng bộ tên trả về
   } catch (error) {
     console.error('Lỗi khi lấy công thức:', error);
@@ -554,11 +552,11 @@ export const getSavedRecipes = async (req, res) => {
     }
 
     // Lấy danh sách công thức đã lưu
-    const savedRecipes = user.savedRecipes;
+    const recipes  = user.savedRecipes;
 
     res.status(200).json({
       status: true,
-      savedRecipes,
+      recipes
     });
   } catch (err) {
     console.error(err);

@@ -6,7 +6,9 @@ export const getAllReel = async (req, res, next) => {
   try {
     const userId = req.user?.id; 
 
-    let reels = await ReelModel.find().sort({ createdAt: -1 }).lean();
+    let reels = await ReelModel.find().sort({ createdAt: -1 })
+    .populate("userOwner", "name avatar")
+    .lean();
 
     if (!reels) {
       return res.status(500).json({ message: "Request Failed" });

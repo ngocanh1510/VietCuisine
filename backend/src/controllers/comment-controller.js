@@ -8,7 +8,7 @@ export const createComment = async (req, res) => {
     console.log("Creating comment with data:", { targetId, onModel, content, parentId });
     const userId = req.user.id;
 
-    if (!['posts', 'reels'].includes(onModel)) {
+    if (!['posts', 'reels','comments'].includes(onModel)) {
       return res.status(400).json({ message: 'Loại nội dung không hợp lệ.' });
     }
 

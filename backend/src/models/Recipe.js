@@ -4,7 +4,7 @@ import User from './User.js';
 
 const RecipeSchema = new mongoose.Schema({
     userOwner: {type: mongoose.Types.ObjectId, ref: User},
-    title:{type:String,required:true,unique:true},
+    title:{type:String,required:true},
     time:{type:Number,required:true},
     carbs:{type:Number,required:true},
     protein:{type:Number,required:true},

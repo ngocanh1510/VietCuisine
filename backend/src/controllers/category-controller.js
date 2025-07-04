@@ -5,7 +5,7 @@ export const getAllCategories = async (req, res, next) => {
     let categories;
   
     try {
-      categories = await CategoryModel.find();
+      categories = await CategoryModel.find().limit(1);
     } catch (err) {
       return console.log(err);
     }

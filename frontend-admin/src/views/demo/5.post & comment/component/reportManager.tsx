@@ -90,9 +90,9 @@ const ReportManagement: React.FC = () => {
     }
   };
 
-  const handleDelete = async (model: string, targetId: string) => {
+  const handleDelete = async (id: string) => {
     try {
-      await axios.delete(`http://localhost:3001/${model}/${targetId}`, {
+      await axios.delete(`http://localhost:3001/comment/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       message.success("Đã xoá nội dung!");
@@ -143,14 +143,14 @@ const ReportManagement: React.FC = () => {
       title: "Hành động",
       key: "action",
       align: "center" as const,
-      render: (_: any, record: any) => (
+      render: (record: any) => (
         <Space>
           {record.targetId ? (
             <Tooltip title="Xoá nội dung">
                 <Button
                     danger
                     icon={<DeleteOutlined />}
-                    onClick={() => handleDelete(record.targetType, record.targetId._id)}
+                    onClick={() => handleDelete(record.targetId._id )}
                 />
                 </Tooltip>
 
