@@ -166,7 +166,7 @@ export const forgotPassword = async (req, res) => {
         await account.save();
         
         // Gửi OTP qua email
-        const mailSubject = 'Đặt lại mật khẩu CeeCine';
+        const mailSubject = 'Đặt lại mật khẩu VietCuisine';
         const mailText = `Mã OTP của bạn là: ${otp}. Mã OTP sẽ hết hạn sau 10 phút.`;
 
         try {
